@@ -1,0 +1,75 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin')",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        "role": {
+          ".validate": "newData.val() === 'user' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        },
+        "wallet_balance": {
+          ".validate": "newData.isNumber() && (data.exists() ? (root.child('users').child(auth.uid).child('role').val() === 'admin' || newData.val() <= data.val()) : newData.val() === 0)"
+        }
+      }
+    },
+    "tournaments": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".indexOn": ["status", "created_at", "game_id", "game_mode_id"]
+    },
+    "games": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+    "game_modes": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".indexOn": ["game_id"]
+    },
+    "participants": {
+      ".read": "auth != null",
+      "$tid": {
+        ".read": "auth != null",
+        "$uid": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          "status": {
+            ".validate": "root.child('users').child(auth.uid).child('role').val() === 'admin' || newData.val() === 'Participated'"
+          }
+        }
+      }
+    },
+    "transactions": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".indexOn": ["created_at", "type"]
+      }
+    },
+    "payment_requests": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".indexOn": ["status", "created_at", "user_id"],
+      "$pid": {
+        ".read": "auth != null && (data.child('user_id').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (!data.exists() && newData.child('user_id').val() === auth.uid && newData.child('status').val() === 'pending'))"
+      }
+    },
+    "deposits": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".indexOn": ["invoice_id", "user_id", "status", "created_at"],
+      "$depositId": {
+        ".read": "auth != null && (data.child('user_id').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "audit_logs": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".indexOn": ["tournament_id", "timestamp", "action"]
+    },
+    "app_settings": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    }
+  }
+}

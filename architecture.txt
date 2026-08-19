@@ -1,0 +1,24 @@
+ADMIN PANEL
+│
+├── Dashboard
+├── Users
+├── Games
+├── Tournaments
+│   ├── Create Tournament
+│   ├── Edit Tournament
+│   ├── Matches
+│   ├── Results
+│   ├── Prize Pool
+│   └── Leaderboard
+│
+├── Wallet
+├── Payments
+├── Withdrawals
+│
+├── Commission       ← আলাদা
+│   ├── Enable/Disable
+│   ├── Type
+│   ├── Rate
+│   └── Settings
+│
+└── Settings

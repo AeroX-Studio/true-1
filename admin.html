@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Velrix Admin — Professional Tournament Platform</title>
+    <meta name="description" content="Velrix Admin — Professional esports tournament management platform.">
+    <meta name="theme-color" content="#07080D">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Sora', 'Inter', sans-serif; -webkit-tap-highlight-color: transparent }
+        :root {
+            --bg: #07080D; --bg2: #0c0e16; --bg3: #11131C; --bg4: #181b28; --bg5: #1f2335; --bg6: #262a3d;
+            --card: rgba(17, 19, 28, 0.9); --card2: rgba(24, 27, 40, 0.75);
+            --border: rgba(139, 92, 246, 0.18); --border2: rgba(6, 182, 212, 0.18); --border3: rgba(255, 255, 255, 0.07);
+            --violet: #8B5CF6; --violet2: #7C3AED; --violet-glow: rgba(139, 92, 246, 0.35); --violet-glow2: rgba(139, 92, 246, 0.12);
+            --cyan: #06B6D4; --cyan2: #0891B2; --cyan-glow: rgba(6, 182, 212, 0.35); --cyan-glow2: rgba(6, 182, 212, 0.12);
+            --text: #E8E8EC; --text2: #A1A1AA; --text3: #71717A; --text4: #3F3F46;
+            --green: #22c55e; --green-glow: rgba(34, 197, 94, 0.18); --red: #ef4444; --red-glow: rgba(239, 68, 68, 0.18); --yellow: #eab308; --yellow-glow: rgba(234, 179, 8, 0.18);
+            --gradient: linear-gradient(135deg, var(--violet), var(--cyan));
+            --gradient-subtle: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(6, 182, 212, 0.12));
+            --gradient-card: linear-gradient(160deg, rgba(139, 92, 246, 0.08), rgba(6, 182, 212, 0.04));
+            --radius: 14px; --radius-sm: 10px; --radius-lg: 20px; --radius-xl: 24px;
+            --shadow-violet: 0 4px 24px var(--violet-glow); --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        body { background: var(--bg); color: var(--text); overflow-x: hidden; -webkit-user-select: none; user-select: none; min-height: 100vh }
+        body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 20% 15%, rgba(139, 92, 246, 0.07), transparent 50%), radial-gradient(ellipse at 80% 85%, rgba(6, 182, 212, 0.05), transparent 50%); pointer-events: none; z-index: 0 }
+        ::-webkit-scrollbar { width: 4px; height: 4px } ::-webkit-scrollbar-track { background: transparent } ::-webkit-scrollbar-thumb { background: var(--violet); border-radius: 10px }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none } input[type=number] { -moz-appearance: textfield }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-16px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes scaleIn { from { transform: scale(0.94); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+        @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+        @keyframes float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+        @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.5 } }
+        @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+        .fade-in { animation: fadeIn .4s ease both }
+        .fade-up { animation: fadeInUp .5s ease both }
+        .scale-in { animation: scaleIn .3s cubic-bezier(0.16, 1, 0.3, 1) both }
+
+        /* App Container */
+        #admin-app { max-width: 600px; margin: 0 auto; min-height: 100vh; position: relative; z-index: 1 }
+        .page { display: none; padding-bottom: 95px } .page.active { display: block; animation: fadeIn .35s ease }
+
+        /* Bottom Nav */
+        #admin-bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; z-index: 100; display: none; background: rgba(7, 8, 13, 0.96); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border-top: 1px solid var(--border3); padding: 6px 0 env(safe-area-inset-bottom, 8px) }
+        .nav-bar { display: flex; justify-content: space-around; align-items: center; padding: 2px 8px }
+        .a-nav { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 10px; border-radius: 14px; cursor: pointer; transition: all .3s cubic-bezier(.4, 0, .2, 1); position: relative; text-decoration: none; color: var(--text4); min-width: 52px }
+        .a-nav i { font-size: 18px; transition: all .3s } .a-nav span { font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase }
+        .a-nav.active { color: var(--violet) } .a-nav.active i { transform: translateY(-2px); color: var(--violet) }
+        .a-nav.active::after { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 22px; height: 3px; background: var(--gradient); border-radius: 0 0 4px 4px; box-shadow: 0 2px 12px var(--violet-glow) }
+        .nav-badge { position: absolute; top: 0; right: 4px; min-width: 16px; height: 16px; border-radius: 100px; background: var(--red); color: #fff; font-size: 9px; font-weight: 800; display: none; align-items: center; justify-content: center; padding: 0 4px; box-shadow: 0 2px 8px var(--red-glow) }
+
+        /* UI Components */
+        .card { background: var(--card); border: 1px solid var(--border3); border-radius: var(--radius-lg); padding: 20px; transition: all .3s; backdrop-filter: blur(14px); position: relative; overflow: hidden }
+        .card:hover { border-color: rgba(139, 92, 246, 0.25) }
+        .btn { padding: 13px 22px; border-radius: var(--radius); font-weight: 700; font-size: 13px; border: none; cursor: pointer; transition: all .25s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; position: relative; overflow: hidden; letter-spacing: .3px; font-family: 'Sora', sans-serif }
+        .btn:active { transform: scale(0.97) }
+        .btn-primary { background: var(--gradient); color: #fff; box-shadow: var(--shadow-violet) }
+        .btn-secondary { background: rgba(6, 182, 212, 0.08); color: var(--cyan); border: 1.5px solid rgba(6, 182, 212, 0.3) }
+        .btn-outline { background: transparent; color: var(--text2); border: 1.5px solid var(--border3) }
+        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 16px var(--red-glow) }
+        .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 4px 16px var(--green-glow) }
+        .btn-warning { background: linear-gradient(135deg, #eab308, #ca8a04); color: #07080D; font-weight: 800 }
+        .btn-ghost { background: transparent; color: var(--text3); border: none; padding: 8px 12px; width: auto }
+        .btn-sm { padding: 8px 14px; font-size: 11px; border-radius: var(--radius-sm) }
+        .btn-lg { padding: 16px 26px; font-size: 15px; border-radius: 16px }
+        .input, .textarea, .select { width: 100%; padding: 13px 15px; background: var(--bg3); border: 1.5px solid var(--border3); border-radius: var(--radius-sm); color: var(--text); font-size: 13px; transition: all .25s; outline: none; font-family: 'Sora', sans-serif }
+        .textarea { resize: vertical; min-height: 80px; line-height: 1.5 }
+        .input:focus, .textarea:focus, .select:focus { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-glow2); background: var(--bg4) }
+        .input::placeholder, .textarea::placeholder { color: var(--text4) }
+        select.input { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%2371717A'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; cursor: pointer }
+        .label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text3); margin-bottom: 7px; letter-spacing: .6px; text-transform: uppercase }
+        .label-hint { font-size: 10px; font-weight: 500; color: var(--text4); text-transform: none; letter-spacing: 0 }
+        .space-y > * + * { margin-top: 12px }
+        .section-title { font-size: 19px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px }
+        .divider { height: 1px; background: var(--border3); margin: 16px 0 }
+
+        /* Toast */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: var(--radius); font-size: 13px; font-weight: 600; z-index: 1000; display: none; animation: fadeInDown .3s ease; backdrop-filter: blur(20px); max-width: 90%; box-shadow: var(--shadow-card) }
+        .toast-s { background: rgba(34, 197, 94, 0.95); color: #fff } .toast-e { background: rgba(239, 68, 68, 0.95); color: #fff }
+
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 100px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px }
+        .badge-draft { background: rgba(113, 113, 122, 0.2); color: #A1A1AA; border: 1px solid rgba(113, 113, 122, 0.3) }
+        .badge-pending, .badge-upcoming { background: var(--yellow-glow); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.3) }
+        .badge-live { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); animation: pulse 2s infinite }
+        .badge-approved, .badge-completed { background: var(--green-glow); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.3) }
+        .badge-admin { background: var(--gradient); color: #fff; border: none }
+
+        /* Tab Bar */
+        .tab-bar { display: flex; background: var(--bg3); border-radius: var(--radius); padding: 4px; gap: 4px; margin-bottom: 18px; border: 1px solid var(--border3); overflow-x: auto }
+        .tab { flex: 1; min-width: 70px; padding: 10px 12px; text-align: center; border-radius: var(--radius-sm); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .25s; color: var(--text4); letter-spacing: .3px; white-space: nowrap }
+        .tab.active { background: var(--gradient); color: #fff; box-shadow: var(--shadow-violet) }
+
+        /* Stepper Wizard */
+        .stepper-header { background: var(--bg3); border: 1px solid var(--border3); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 18px }
+        .stepper-progress { height: 4px; background: var(--bg5); border-radius: 10px; margin-bottom: 12px; overflow: hidden; position: relative }
+        .stepper-progress-bar { height: 100%; background: var(--gradient); transition: width .35s ease; border-radius: 10px; box-shadow: 0 0 10px var(--violet-glow) }
+        .stepper-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px }
+        .step-pill { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; background: var(--bg4); color: var(--text3); border: 1px solid var(--border3); cursor: pointer; white-space: nowrap; transition: all .25s }
+        .step-pill.active { background: var(--gradient-subtle); color: var(--violet); border-color: var(--violet); box-shadow: 0 0 12px var(--violet-glow2) }
+        .step-pill.completed { background: rgba(34, 197, 94, 0.08); color: var(--green); border-color: rgba(34, 197, 94, 0.3) }
+        .step-pill-num { width: 18px; height: 18px; border-radius: 50%; background: var(--bg5); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800 }
+        .step-pill.active .step-pill-num { background: var(--violet); color: #fff }
+        .step-pill.completed .step-pill-num { background: var(--green); color: #fff }
+
+        /* Wizard Sticky Action Bar */
+        .wizard-footer { position: sticky; bottom: 0; left: 0; right: 0; background: rgba(7, 8, 13, 0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border3); padding: 14px 20px; display: flex; gap: 8px; align-items: center; z-index: 50; margin: 20px -20px -20px -20px; border-radius: 0 0 var(--radius-lg) var(--radius-lg) }
+
+        /* Live Image Preview */
+        .thumb-preview-box { width: 100%; height: 190px; border-radius: var(--radius); background: var(--bg4); border: 1.5px dashed var(--border3); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; margin-top: 10px }
+        .thumb-preview-img { width: 100%; height: 100%; object-fit: cover; transition: opacity .3s }
+        .thumb-placeholder { text-align: center; color: var(--text4); padding: 20px }
+        .thumb-placeholder i { font-size: 32px; margin-bottom: 8px; color: var(--text4) }
+
+        /* Prize Pool Allocator */
+        .prize-bar { height: 8px; background: var(--bg5); border-radius: 10px; overflow: hidden; display: flex; margin: 12px 0 }
+        .prize-bar-segment { height: 100%; transition: width .3s ease }
+
+        /* Neon Spinner */
+        .neon-spinner { width: 44px; height: 44px; margin: 0 auto; border-radius: 50%; border: 3px solid var(--bg5); border-top-color: var(--violet); border-right-color: var(--cyan); animation: spin .8s linear infinite; box-shadow: 0 0 16px var(--violet-glow) }
+        .watermark { text-align: center; padding: 20px; font-size: 10px; color: var(--text4); letter-spacing: 1px; font-weight: 600 }
+        .watermark span { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent }
+
+        /* Floating Watermark */
+        #veltrix-watermark { position: fixed; z-index: 300; left: 50%; transform: translateX(-50%); bottom: 76px; display: none; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 100px; background: rgba(7, 8, 13, 0.85); border: 1px solid var(--border3); backdrop-filter: blur(12px); font-size: 10px; font-weight: 600; color: var(--text4); pointer-events: none }
+        #veltrix-watermark .wm-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gradient); flex-shrink: 0 }
+        #veltrix-watermark .wm-label { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent }
+        body.authed #veltrix-watermark { display: flex }
+
+        /* Custom Mode Cards */
+        .mode-card { padding: 14px; border-radius: var(--radius); background: var(--bg3); border: 1.5px solid var(--border3); cursor: pointer; transition: all .25s }
+        .mode-card.selected { border-color: var(--violet); background: var(--gradient-subtle); box-shadow: 0 0 16px var(--violet-glow2) }
+    </style>
+</head>
+
+<body>
+    <div id="admin-app">
+        <div id="initial-loader" style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px">
+            <div class="neon-spinner"></div>
+            <p style="color:var(--text3);font-size:13px;font-weight:600">Loading Velrix Esports Admin...</p>
+        </div>
+
+        <main>
+            <div id="adminLoginPage" class="page"></div>
+            <div id="adminDashboardPage" class="page"></div>
+            <div id="adminTournamentPage" class="page"></div>
+            <div id="adminCreateTournamentPage" class="page"></div>
+            <div id="adminManageTournamentPage" class="page"></div>
+            <div id="adminGamesPage" class="page"></div>
+            <div id="adminUsersPage" class="page"></div>
+            <div id="adminPaymentsPage" class="page"></div>
+            <div id="adminSettingsPage" class="page"></div>
+        </main>
+
+        <nav id="admin-bottom-nav">
+            <div class="nav-bar">
+                <a class="a-nav" onclick="navigateTo('adminDashboardPage')" id="anav-dash"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+                <a class="a-nav" onclick="navigateTo('adminTournamentPage')" id="anav-tourn"><i class="fas fa-trophy"></i><span>Tourneys</span></a>
+                <a class="a-nav" onclick="navigateTo('adminGamesPage')" id="anav-games"><i class="fas fa-gamepad"></i><span>Games</span></a>
+                <a class="a-nav" onclick="navigateTo('adminPaymentsPage')" id="anav-pay">
+                    <div style="position:relative"><i class="fas fa-credit-card"></i><span id="payment-badge" class="nav-badge"></span></div><span>Payments</span>
+                </a>
+                <a class="a-nav" onclick="navigateTo('adminUsersPage')" id="anav-users"><i class="fas fa-users"></i><span>Users</span></a>
+                <a class="a-nav" onclick="navigateTo('adminSettingsPage')" id="anav-set"><i class="fas fa-cog"></i><span>Settings</span></a>
+            </div>
+        </nav>
+    </div>
+
+    <div id="toast"></div>
+    <div id="veltrix-watermark"><span class="wm-dot"></span><span class="wm-label">Made by AeroX Studio</span></div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgxg06yT5BvGEgpC8bcyXwU9h0UEuaZss",
+            authDomain: "veltrix-tournament.firebaseapp.com",
+            databaseURL: "https://veltrix-tournament-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "veltrix-tournament",
+            storageBucket: "veltrix-tournament.firebasestorage.app",
+            messagingSenderId: "929705162089",
+            appId: "1:929705162089:web:f02ee691c418b3e01ab9f8"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(), db = firebase.database();
+        let currentAdminData = null, currentTournamentId = null, currentDraftId = null;
+
+        // Default Games & Modes Preset Seeds
+        const DEFAULT_GAMES = {
+            free_fire: { id: 'free_fire', name: 'Free Fire', icon: 'fa-fire', platform: 'Mobile', publisher: 'Garena', created_at: new Date().toISOString() },
+            minecraft: { id: 'minecraft', name: 'Minecraft', icon: 'fa-cube', platform: 'PC / Cross-Platform', publisher: 'Mojang', created_at: new Date().toISOString() },
+            bgmi: { id: 'bgmi', name: 'BGMI / PUBG', icon: 'fa-crosshairs', platform: 'Mobile', publisher: 'Krafton', created_at: new Date().toISOString() },
+            valorant: { id: 'valorant', name: 'Valorant', icon: 'fa-shield-halved', platform: 'PC', publisher: 'Riot Games', created_at: new Date().toISOString() },
+            custom: { id: 'custom', name: 'Custom Esports', icon: 'fa-gamepad', platform: 'Cross-Platform', publisher: 'Community', created_at: new Date().toISOString() }
+        };
+
+        const DEFAULT_MODES = {
+            ff_br: { id: 'ff_br', game_id: 'free_fire', name: 'Battle Royale (BR)', type: 'battle_royale', default_team_size: 4, formats: ['Squad', 'Duo', 'Solo'], scoring_type: 'br_points' },
+            ff_cs: { id: 'ff_cs', game_id: 'free_fire', name: 'Clash Squad (CS)', type: 'team_vs_team', default_team_size: 4, formats: ['BO1', 'BO3', 'BO5'], scoring_type: 'match_score' },
+            mc_pvp: { id: 'mc_pvp', game_id: 'minecraft', name: 'PvP Duels / Arena', type: 'solo_pvp', default_team_size: 1, formats: ['1v1', '2v2', '4v4'], scoring_type: 'match_score' },
+            mc_bedwars: { id: 'mc_bedwars', game_id: 'minecraft', name: 'BedWars', type: 'team_vs_team', default_team_size: 4, formats: ['4v4', '2v2'], scoring_type: 'match_score' },
+            mc_skywars: { id: 'mc_skywars', game_id: 'minecraft', name: 'SkyWars', type: 'battle_royale', default_team_size: 1, formats: ['Solo', 'Duo'], scoring_type: 'br_points' },
+            bgmi_br: { id: 'bgmi_br', game_id: 'bgmi', name: 'Classic Battle Royale', type: 'battle_royale', default_team_size: 4, formats: ['Squad', 'Duo', 'Solo'], scoring_type: 'br_points' },
+            val_comp: { id: 'val_comp', game_id: 'valorant', name: '5v5 Competitive', type: 'team_vs_team', default_team_size: 5, formats: ['BO1', 'BO3', 'BO5'], scoring_type: 'match_score' },
+            custom_mode: { id: 'custom_mode', game_id: 'custom', name: 'Custom Tournament Match', type: 'custom', default_team_size: 1, formats: ['Custom'], scoring_type: 'custom' }
+        };
+
+        // Standard Professional Rules Templates
+        const DEFAULT_RULES = {
+            general: "1. All players must be respectful. Toxic behavior, hate speech, or abuse will lead to instant disqualification.\n2. Organizers' decisions are final and binding in all dispute cases.\n3. Every participant must follow fair play principles.",
+            game_rules: "1. Standard competitive esports settings apply.\n2. Emulator players are strictly prohibited unless tournament title explicitly mentions 'Emulator Allowed'.\n3. Gun skins with attribute bonuses may be restricted based on match lobby rules.",
+            team_rules: "1. Teams must submit valid in-game names and character UIDs.\n2. Only registered players and listed substitutes are eligible to play.\n3. Ringers or unverified accounts will result in team forfeit.",
+            match_rules: "1. Room ID and Password will be provided inside the app 10-15 minutes prior to match time.\n2. Maximum 5 minutes wait time allowed after scheduled match start.\n3. Results must be submitted via match screenshot or recorded replay upon admin request.",
+            checkin_rules: "1. Team captains must check in on the app at least 15 minutes before the match.\n2. Failure to check in within the allotted time will forfeit the slot to reserve teams.",
+            disqualification: "1. Teaming up with opponents, using hacks, scripts, third-party mods, or glitch exploits is strictly prohibited.\n2. Severe violation will result in permanent ban from all Velrix esports tournaments.",
+            fair_play: "1. Velrix anti-cheat verification is actively enforced.\n2. Admins reserve the right to request screen recordings or PoV clips if suspicious activity is reported.",
+            prize_rules: "1. Tournament prize rewards will be directly credited to the winner's in-app wallet within 1-2 hours of result verification.\n2. Kill rewards are calculated and distributed based on official verified match logs."
+        };
+
+        // Wizard State
+        let wizard = getInitialWizardState();
+
+        function getInitialWizardState() {
+            return {
+                id: null,
+                step: 1,
+                basic: {
+                    title: '',
+                    short_desc: '',
+                    full_desc: '',
+                    thumbnail_url: '',
+                    platform: 'Mobile',
+                    region: 'South Asia (BD)',
+                    visibility: 'Public'
+                },
+                game: {
+                    game_id: 'free_fire',
+                    game_name: 'Free Fire',
+                    mode_id: 'ff_br',
+                    mode_name: 'Battle Royale (BR)'
+                },
+                format: {
+                    type: 'Battle Royale',
+                    match_format: 'Squad',
+                    team_size: 4
+                },
+                registration: {
+                    entry_fee: 50,
+                    is_free: false,
+                    max_teams: 12,
+                    max_players: 48,
+                    reg_start: '',
+                    reg_deadline: '',
+                    auto_close: true
+                },
+                team_config: {
+                    min_team_size: 4,
+                    max_team_size: 4,
+                    substitutes_allowed: true,
+                    max_substitutes: 1,
+                    require_game_uid: true,
+                    require_in_game_name: true,
+                    require_team_name: true,
+                    require_discord: false
+                },
+                scoring: {
+                    type: 'br_points',
+                    rounds: 3,
+                    kill_points: 1,
+                    placement_points: [
+                        { rank: 1, points: 12 }, { rank: 2, points: 9 }, { rank: 3, points: 8 },
+                        { rank: 4, points: 7 }, { rank: 5, points: 6 }, { rank: 6, points: 5 },
+                        { rank: 7, points: 4 }, { rank: 8, points: 3 }, { rank: 9, points: 2 }, { rank: 10, points: 1 }
+                    ],
+                    bonus_points: 0,
+                    penalty_points: 0,
+                    match_score_target: 2
+                },
+                prize: {
+                    total_pool: 1000,
+                    distribution_type: 'fixed',
+                    first_place: 500,
+                    second_place: 300,
+                    third_place: 100,
+                    mvp_reward: 50,
+                    kill_reward_rate: 10,
+                    kill_reward_budget: 50,
+                    custom_awards: []
+                },
+                schedule: {
+                    reg_start: '',
+                    reg_end: '',
+                    tournament_start: '',
+                    match_time: '',
+                    check_in_start: '',
+                    check_in_end: '',
+                    room_unlock_time: ''
+                },
+                rules: { ...DEFAULT_RULES },
+                status: 'DRAFT',
+                created_at: '',
+                updated_at: ''
+            };
+        }
+
+        // Initialize default games if empty
+        async function ensureSeedData() {
+            try {
+                const gSnap = await db.ref('games').once('value');
+                if (!gSnap.exists()) {
+                    await db.ref('games').set(DEFAULT_GAMES);
+                }
+                const mSnap = await db.ref('game_modes').once('value');
+                if (!mSnap.exists()) {
+                    await db.ref('game_modes').set(DEFAULT_MODES);
+                }
+            } catch (e) { console.warn('Seed data check:', e); }
+        }
+
+        function fmt(a) { return `৳${Number(a || 0).toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.innerHTML = `<i class="fas fa-${isError ? 'exclamation-circle' : 'check-circle'}" style="margin-right:6px"></i>${msg}`;
+            t.className = isError ? 'toast-e' : 'toast-s';
+            t.style.display = 'block'; t.style.opacity = '1';
+            setTimeout(() => { t.style.transition = 'opacity .4s'; t.style.opacity = '0'; setTimeout(() => t.style.display = 'none', 400) }, 3000);
+        }
+
+        function updatePaymentBadge() {
+            db.ref('payment_requests').orderByChild('status').equalTo('pending').once('value', snap => {
+                const b = document.getElementById('payment-badge'); if (!b) return;
+                const c = snap.numChildren();
+                if (c > 0) { b.textContent = c > 9 ? '9+' : c; b.style.display = 'flex' } else { b.style.display = 'none' }
+            });
+        }
+
+        async function logAudit(action, tournamentId, details = {}) {
+            try {
+                await db.ref('audit_logs').push({
+                    admin_uid: auth.currentUser?.uid || 'unknown',
+                    admin_email: auth.currentUser?.email || 'admin',
+                    action,
+                    tournament_id: tournamentId || null,
+                    timestamp: new Date().toISOString(),
+                    details
+                });
+            } catch (e) { console.error('Audit log failed:', e); }
+        }
+
+        function navigateTo(pageId, data = null) {
+            document.getElementById('initial-loader').style.display = 'none';
+            if (pageId === 'adminManageTournamentPage' && data) currentTournamentId = data.tournamentId;
+            if (pageId === 'adminCreateTournamentPage') {
+                if (data && data.draftId) {
+                    currentDraftId = data.draftId;
+                } else if (!data || !data.preserve) {
+                    wizard = getInitialWizardState();
+                    currentDraftId = null;
+                }
+            }
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const tp = document.getElementById(pageId); if (tp) { tp.classList.add('active'); loadPageContent(pageId) }
+            const nav = document.getElementById('admin-bottom-nav');
+            if (nav) nav.style.display = auth.currentUser ? 'block' : 'none';
+            const map = { adminDashboardPage: 'anav-dash', adminTournamentPage: 'anav-tourn', adminGamesPage: 'anav-games', adminPaymentsPage: 'anav-pay', adminUsersPage: 'anav-users', adminSettingsPage: 'anav-set' };
+            document.querySelectorAll('.a-nav').forEach(n => n.classList.toggle('active', n.id === map[pageId]));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (auth.currentUser) updatePaymentBadge();
+        }
+
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                const ud = (await db.ref(`users/${user.uid}`).once('value')).val();
+                if (ud && ud.role === 'admin') {
+                    currentAdminData = { uid: user.uid, email: user.email, ...ud };
+                    await ensureSeedData();
+                    navigateTo('adminDashboardPage'); updatePaymentBadge();
+                    db.ref('payment_requests').on('value', updatePaymentBadge);
+                    document.body.classList.add('authed');
+                } else { showToast('Access denied — Admin only', true); auth.signOut(); navigateTo('adminLoginPage'); document.body.classList.remove('authed') }
+            } else { currentAdminData = null; navigateTo('adminLoginPage'); document.body.classList.remove('authed') }
+        });
+
+        function loadPageContent(pid) {
+            const c = document.getElementById(pid); if (!c) return;
+            switch (pid) {
+                case 'adminLoginPage': renderLogin(c); break;
+                case 'adminDashboardPage': renderDash(c); break;
+                case 'adminTournamentPage': renderTournaments(c); break;
+                case 'adminCreateTournamentPage': renderTournamentWizard(c); break;
+                case 'adminManageTournamentPage': renderManage(c); break;
+                case 'adminGamesPage': renderGamesManager(c); break;
+                case 'adminUsersPage': renderUsers(c); break;
+                case 'adminPaymentsPage': renderPayments(c); break;
+                case 'adminSettingsPage': renderSettings(c); break;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // LOGIN PAGE
+        // ══════════════════════════════════════════════════════════════
+        function renderLogin(c) {
+            c.innerHTML = `<div style="padding:40px 24px;min-height:100vh;display:flex;flex-direction:column;justify-content:center;position:relative">
+            <div style="text-align:center;margin-bottom:36px" class="fade-up">
+                <div style="width:84px;height:84px;margin:0 auto 18px;border-radius:50%;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;box-shadow:0 0 45px var(--violet-glow);animation:float 4s ease infinite"><i class="fas fa-shield-halved"></i></div>
+                <h1 style="font-size:26px;font-weight:900;letter-spacing:.5px;margin-bottom:6px;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">VELRIX ESPORTS</h1>
+                <p style="color:var(--text3);font-size:12px;font-weight:600">Enterprise Tournament Management System</p>
+            </div>
+            <div class="card fade-up stagger-2" style="border-radius:var(--radius-xl);border:1px solid var(--border)">
+                <form id="adminLoginForm" class="space-y">
+                    <div><label class="label"><i class="fas fa-envelope" style="margin-right:6px"></i>Admin Email</label><input type="email" id="adminLoginEmail" placeholder="admin@veltrix.app" class="input" required></div>
+                    <div><label class="label"><i class="fas fa-lock" style="margin-right:6px"></i>Password</label><input type="password" id="adminLoginPassword" placeholder="••••••••" class="input" required></div>
+                    <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-sign-in-alt"></i>Login to Dashboard</button>
+                </form>
+            </div>
+            <div class="watermark" style="margin-top:28px">Platform Version 4.0 — <span>AeroX Studio</span></div>
+            </div>`;
+            document.getElementById('adminLoginForm').addEventListener('submit', e => {
+                e.preventDefault(); const b = e.target.querySelector('button[type="submit"]');
+                b.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Authenticating...'; b.disabled = true;
+                auth.signInWithEmailAndPassword(e.target.adminLoginEmail.value, e.target.adminLoginPassword.value).catch(err => { showToast(err.message, true); b.innerHTML = '<i class="fas fa-sign-in-alt"></i>Login to Dashboard'; b.disabled = false });
+            });
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // DASHBOARD PAGE
+        // ══════════════════════════════════════════════════════════════
+        async function renderDash(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                <div><h2 style="font-size:22px;font-weight:900;letter-spacing:-.4px">Esports Dashboard</h2><p style="font-size:12px;color:var(--text3);margin-top:2px">Welcome back, ${currentAdminData?.username || 'Admin'} ⚡</p></div>
+                <button onclick="logout()" class="btn btn-danger btn-sm" style="width:auto;padding:8px 14px"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+                <div class="card fade-up stagger-1" style="padding:16px"><p style="font-size:10px;font-weight:700;color:var(--text4);text-transform:uppercase">Total Users</p><p style="font-size:24px;font-weight:900;margin-top:4px" id="d-users">...</p></div>
+                <div class="card fade-up stagger-2" style="padding:16px"><p style="font-size:10px;font-weight:700;color:var(--text4);text-transform:uppercase">Tournaments</p><p style="font-size:24px;font-weight:900;margin-top:4px" id="d-tourneys">...</p></div>
+                <div class="card fade-up stagger-3" style="padding:16px"><p style="font-size:10px;font-weight:700;color:var(--text4);text-transform:uppercase">Active / Live</p><p style="font-size:24px;font-weight:900;color:var(--red);margin-top:4px" id="d-live">...</p></div>
+                <div class="card fade-up stagger-4" style="padding:16px"><p style="font-size:10px;font-weight:700;color:var(--text4);text-transform:uppercase">Pending Payouts</p><p style="font-size:24px;font-weight:900;color:var(--yellow);margin-top:4px" id="d-payments">...</p></div>
+            </div>
+            <div class="card fade-up stagger-5" style="margin-bottom:16px;border:1px solid var(--border)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <h3 style="font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px"><i class="fas fa-wand-magic-sparkles" style="color:var(--violet)"></i>Quick Actions</h3>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <button onclick="navigateTo('adminCreateTournamentPage')" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i>New Tourney</button>
+                    <button onclick="navigateTo('adminGamesPage')" class="btn btn-secondary btn-sm"><i class="fas fa-gamepad"></i>Games & Modes</button>
+                </div>
+            </div>
+            <div class="section-title"><i class="fas fa-history" style="color:var(--cyan)"></i>Recent Tournaments</div>
+            <div id="recent-tourneys-list" class="space-y"><div style="text-align:center;padding:24px"><div class="neon-spinner"></div></div></div>
+            </div>`;
+            try {
+                const [uSnap, tSnap, pSnap] = await Promise.all([
+                    db.ref('users').once('value'),
+                    db.ref('tournaments').once('value'),
+                    db.ref('payment_requests').orderByChild('status').equalTo('pending').once('value')
+                ]);
+                const users = uSnap.val() || {}, ts = tSnap.val() || {}, pays = pSnap.val() || {};
+                document.getElementById('d-users').textContent = Object.keys(users).length;
+                document.getElementById('d-tourneys').textContent = Object.keys(ts).length;
+                document.getElementById('d-payments').textContent = Object.keys(pays).length;
+                const liveCount = Object.values(ts).filter(t => t.status === 'Live' || t.status === 'REGISTRATION_OPEN').length;
+                document.getElementById('d-live').textContent = liveCount;
+
+                const listEl = document.getElementById('recent-tourneys-list');
+                const entries = Object.entries(ts).reverse().slice(0, 5);
+                if (!entries.length) { listEl.innerHTML = '<p style="text-align:center;color:var(--text4);font-size:12px;padding:20px">No tournaments yet</p>'; return }
+                listEl.innerHTML = entries.map(([id, t]) => `
+                <div class="card" style="padding:14px;display:flex;justify-content:space-between;align-items:center">
+                    <div><p style="font-weight:700;font-size:13px">${t.title || 'Untitled'}</p><p style="font-size:11px;color:var(--text3)"><i class="fas fa-gamepad" style="margin-right:4px"></i>${t.game_name || 'Game'} • ${t.game_type || t.format?.type || 'Match'}</p></div>
+                    <div style="text-align:right"><span class="badge ${t.status==='Live'?'badge-live':t.status==='DRAFT'?'badge-draft':'badge-upcoming'}" style="font-size:9px">${t.status}</span><p style="font-size:11px;font-weight:800;color:var(--green);margin-top:4px">${fmt(t.prize_pool || t.prize?.total_pool)}</p></div>
+                </div>`).join('');
+            } catch (e) { console.error(e) }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // TOURNAMENTS LIST & MANAGEMENT
+        // ══════════════════════════════════════════════════════════════
+        let currentTournamentFilter = 'All';
+
+        async function renderTournaments(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+                <div class="section-title" style="margin-bottom:0"><i class="fas fa-trophy" style="color:var(--violet)"></i>Tournaments</div>
+                <button onclick="navigateTo('adminCreateTournamentPage')" class="btn btn-primary btn-sm" style="width:auto;padding:9px 16px"><i class="fas fa-plus"></i>Create New</button>
+            </div>
+            <div class="tab-bar">
+                <div class="tab ${currentTournamentFilter==='All'?'active':''}" onclick="setTournamentFilter('All')">All</div>
+                <div class="tab ${currentTournamentFilter==='DRAFT'?'active':''}" onclick="setTournamentFilter('DRAFT')">📝 Drafts</div>
+                <div class="tab ${currentTournamentFilter==='Upcoming'?'active':''}" onclick="setTournamentFilter('Upcoming')">⚡ Upcoming</div>
+                <div class="tab ${currentTournamentFilter==='Live'?'active':''}" onclick="setTournamentFilter('Live')">🔴 Live</div>
+                <div class="tab ${currentTournamentFilter==='Completed'?'active':''}" onclick="setTournamentFilter('Completed')">✅ Done</div>
+            </div>
+            <div id="tournaments-list-container" class="space-y"><div style="text-align:center;padding:40px"><div class="neon-spinner"></div></div></div>
+            </div>`;
+            loadTournamentsList();
+        }
+
+        function setTournamentFilter(f) {
+            currentTournamentFilter = f;
+            document.querySelectorAll('.tab-bar .tab').forEach(t => t.classList.toggle('active', t.textContent.includes(f)));
+            loadTournamentsList();
+        }
+
+        async function loadTournamentsList() {
+            const listEl = document.getElementById('tournaments-list-container'); if (!listEl) return;
+            const ts = (await db.ref('tournaments').once('value')).val() || {};
+            let entries = Object.entries(ts);
+            if (currentTournamentFilter !== 'All') {
+                entries = entries.filter(([, t]) => t.status === currentTournamentFilter || (currentTournamentFilter === 'Upcoming' && (t.status === 'Upcoming' || t.status === 'REGISTRATION_OPEN' || t.status === 'CHECK_IN')));
+            }
+            if (!entries.length) {
+                listEl.innerHTML = `<div class="card" style="text-align:center;padding:40px 20px"><i class="fas fa-trophy" style="font-size:32px;color:var(--text4);margin-bottom:12px"></i><p style="font-weight:700;font-size:14px;color:var(--text3)">No tournaments found in this view</p><button onclick="navigateTo('adminCreateTournamentPage')" class="btn btn-secondary btn-sm" style="width:auto;margin:14px auto 0"><i class="fas fa-plus"></i>Create One Now</button></div>`;
+                return;
+            }
+            listEl.innerHTML = entries.map(([id, t]) => {
+                const prize = t.prize_pool || t.prize?.total_pool || 0;
+                const fee = t.entry_fee || t.registration?.entry_fee || 0;
+                const thumb = sanitizeUrl(t.thumbnail_url || t.basic?.thumbnail_url);
+                const gameName = t.game_name || t.game?.game_name || 'Esports';
+                const modeName = t.game_type || t.game?.mode_name || t.format?.type || 'Match';
+                const isDraft = t.status === 'DRAFT';
+                return `
+                <div class="card fade-up" style="padding:16px;margin-bottom:12px">
+                    ${thumb ? `<div style="width:100%;height:110px;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:12px;position:relative"><img src="${thumb}" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover"><div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(7,8,13,0.85), transparent)"></div><span class="badge ${isDraft?'badge-draft':t.status==='Live'?'badge-live':'badge-upcoming'}" style="position:absolute;top:10px;right:10px">${t.status}</span></div>` : ''}
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                        <div>
+                            <p style="font-weight:800;font-size:15px">${t.title || 'Untitled Tournament'}</p>
+                            <p style="font-size:11px;color:var(--text3);margin-top:2px"><i class="fas fa-gamepad" style="margin-right:4px"></i>${gameName} • <span style="color:var(--cyan)">${modeName}</span></p>
+                        </div>
+                        ${!thumb ? `<span class="badge ${isDraft?'badge-draft':t.status==='Live'?'badge-live':'badge-upcoming'}">${t.status}</span>` : ''}
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;background:var(--bg4);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div><p style="font-size:9px;font-weight:700;color:var(--text4);text-transform:uppercase">Entry Fee</p><p style="font-size:13px;font-weight:800;color:var(--text)">${fee === 0 ? 'FREE' : fmt(fee)}</p></div>
+                        <div><p style="font-size:9px;font-weight:700;color:var(--text4);text-transform:uppercase">Prize Pool</p><p style="font-size:13px;font-weight:800;color:var(--green)">${fmt(prize)}</p></div>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        ${isDraft ? `<button onclick="editDraft('${id}')" class="btn btn-warning btn-sm" style="flex:2"><i class="fas fa-edit"></i>Continue Draft</button>` : `<button onclick="navigateTo('adminManageTournamentPage',{tournamentId:'${id}'})" class="btn btn-secondary btn-sm" style="flex:2"><i class="fas fa-cog"></i>Manage Match</button>`}
+                        <button onclick="duplicateTournament('${id}')" class="btn btn-outline btn-sm" style="flex:1" title="Duplicate"><i class="fas fa-copy"></i>Clone</button>
+                        <button onclick="deleteTournament('${id}')" class="btn btn-danger btn-sm" style="width:auto;padding:8px 12px" title="Delete"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 11-STEP TOURNAMENT CREATION WIZARD
+        // ══════════════════════════════════════════════════════════════
+        async function renderTournamentWizard(c) {
+            if (currentDraftId && (!wizard.id || wizard.id !== currentDraftId)) {
+                const snap = await db.ref(`tournaments/${currentDraftId}`).once('value');
+                if (snap.exists()) {
+                    const loaded = snap.val();
+                    wizard = { ...getInitialWizardState(), ...loaded, id: currentDraftId };
+                }
+            }
+
+            c.innerHTML = `
+            <div style="padding:20px 20px 100px 20px" class="fade-in">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                    <button onclick="navigateTo('adminTournamentPage')" class="btn btn-ghost btn-sm" style="color:var(--text3)"><i class="fas fa-arrow-left"></i> Back</button>
+                    <span class="badge ${wizard.status==='DRAFT'?'badge-draft':'badge-admin'}">${wizard.id ? 'EDITING: ' + (wizard.basic.title || 'DRAFT') : 'NEW TOURNAMENT'}</span>
+                </div>
+
+                <!-- Stepper Progress Header -->
+                <div class="stepper-header">
+                    <div class="stepper-progress"><div id="wizard-progress-bar" class="stepper-progress-bar" style="width:${(wizard.step / 11) * 100}%"></div></div>
+                    <div class="stepper-scroll" id="wizard-stepper-pills">
+                        ${renderStepperPills()}
+                    </div>
+                </div>
+
+                <!-- Wizard Body Card -->
+                <div class="card" id="wizard-step-content" style="border:1px solid var(--border)">
+                    ${renderStepContent(wizard.step)}
+                </div>
+
+                <!-- Sticky Wizard Footer -->
+                <div class="wizard-footer">
+                    <button onclick="saveDraft()" class="btn btn-outline btn-sm" style="flex:1"><i class="fas fa-save"></i>Draft</button>
+                    ${wizard.step > 1 ? `<button onclick="prevStep()" class="btn btn-secondary btn-sm" style="flex:1"><i class="fas fa-chevron-left"></i>Prev</button>` : ''}
+                    ${wizard.step < 11 ? `<button onclick="nextStep()" class="btn btn-primary btn-sm" style="flex:2">Next &nbsp;<i class="fas fa-chevron-right"></i></button>` : `<button onclick="publishTournament()" class="btn btn-success btn-sm" style="flex:2"><i class="fas fa-rocket"></i>Publish</button>`}
+                </div>
+            </div>`;
+
+            attachStepEventHandlers();
+        }
+
+        function renderStepperPills() {
+            const steps = [
+                { num: 1, name: 'Basic Info' },
+                { num: 2, name: 'Game & Mode' },
+                { num: 3, name: 'Format' },
+                { num: 4, name: 'Registration' },
+                { num: 5, name: 'Team Config' },
+                { num: 6, name: 'Scoring' },
+                { num: 7, name: 'Prize Pool' },
+                { num: 8, name: 'Schedule' },
+                { num: 9, name: 'Rules' },
+                { num: 10, name: 'Preview' },
+                { num: 11, name: 'Publish' }
+            ];
+            return steps.map(s => {
+                const isActive = wizard.step === s.num;
+                const isDone = wizard.step > s.num;
+                return `<div class="step-pill ${isActive ? 'active' : ''} ${isDone ? 'completed' : ''}" onclick="goToStep(${s.num})"><span class="step-pill-num">${isDone ? '✓' : s.num}</span><span>${s.name}</span></div>`;
+            }).join('');
+        }
+
+        function goToStep(s) {
+            saveCurrentStepFields();
+            wizard.step = Math.max(1, Math.min(11, s));
+            updateWizardView();
+        }
+
+        function nextStep() {
+            saveCurrentStepFields();
+            if (wizard.step < 11) {
+                wizard.step++;
+                updateWizardView();
+            }
+        }
+
+        function prevStep() {
+            saveCurrentStepFields();
+            if (wizard.step > 1) {
+                wizard.step--;
+                updateWizardView();
+            }
+        }
+
+        function updateWizardView() {
+            const pb = document.getElementById('wizard-progress-bar');
+            if (pb) pb.style.width = `${(wizard.step / 11) * 100}%`;
+            const pills = document.getElementById('wizard-stepper-pills');
+            if (pills) pills.innerHTML = renderStepperPills();
+            const body = document.getElementById('wizard-step-content');
+            if (body) {
+                body.innerHTML = renderStepContent(wizard.step);
+                attachStepEventHandlers();
+            }
+            window.scrollTo({ top: 100, behavior: 'smooth' });
+        }
+
+        function sanitizeUrl(url) {
+            if (!url) return '';
+            const clean = String(url).trim();
+            if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
+            return '';
+        }
+
+        // Render Step Contents (1 to 11)
+        function renderStepContent(step) {
+            switch (step) {
+                case 1:
+                    const safeThumb = sanitizeUrl(wizard.basic.thumbnail_url);
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>1. Basic Information</span><span class="badge badge-admin">Step 1/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Enter tournament branding, banner, and basic visibility details.</p>
+                        <div>
+                            <label class="label">Tournament Title *</label>
+                            <input type="text" id="w-title" value="${wizard.basic.title}" placeholder="e.g. Nexo Free Fire Championship #01" class="input" required>
+                        </div>
+                        <div>
+                            <label class="label">Short Description</label>
+                            <input type="text" id="w-short-desc" value="${wizard.basic.short_desc}" placeholder="e.g. Ultimate Battle Royale esports tournament" class="input">
+                        </div>
+                        <div>
+                            <label class="label">Full Overview & Details</label>
+                            <textarea id="w-full-desc" class="textarea" placeholder="Detailed tournament rules, stream schedule, broadcast information...">${wizard.basic.full_desc}</textarea>
+                        </div>
+                        <div>
+                            <label class="label">Thumbnail Image Direct URL <span class="label-hint">(https:// only)</span></label>
+                            <input type="url" id="w-thumbnail" value="${wizard.basic.thumbnail_url}" placeholder="https://example.com/banner.jpg" class="input">
+                            <div class="thumb-preview-box" id="thumbPreviewBox">
+                                ${safeThumb ? `<img src="${safeThumb}" id="thumbImg" class="thumb-preview-img" onerror="handleThumbError()">` : `<div class="thumb-placeholder"><i class="fas fa-image"></i><p style="font-size:11px">Live Image Preview will appear here</p></div>`}
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div>
+                                <label class="label">Platform</label>
+                                <select id="w-platform" class="input">
+                                    <option value="Mobile" ${wizard.basic.platform==='Mobile'?'selected':''}>Mobile</option>
+                                    <option value="PC" ${wizard.basic.platform==='PC'?'selected':''}>PC</option>
+                                    <option value="Console" ${wizard.basic.platform==='Console'?'selected':''}>Console</option>
+                                    <option value="Cross-Platform" ${wizard.basic.platform==='Cross-Platform'?'selected':''}>Cross-Platform</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">Region</label>
+                                <select id="w-region" class="input">
+                                    <option value="South Asia (BD)" ${wizard.basic.region==='South Asia (BD)'?'selected':''}>South Asia (BD)</option>
+                                    <option value="India" ${wizard.basic.region==='India'?'selected':''}>India</option>
+                                    <option value="Global" ${wizard.basic.region==='Global'?'selected':''}>Global</option>
+                                    <option value="SEA" ${wizard.basic.region==='SEA'?'selected':''}>SEA</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>`;
+
+                case 2:
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>2. Game & Game Mode</span><span class="badge badge-admin">Step 2/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Select database-driven game and supported tournament game mode.</p>
+                        <div>
+                            <label class="label">Select Game</label>
+                            <select id="w-game-select" class="input" onchange="onGameSelected(this.value)">
+                                <option value="free_fire" ${wizard.game.game_id==='free_fire'?'selected':''}>Free Fire</option>
+                                <option value="minecraft" ${wizard.game.game_id==='minecraft'?'selected':''}>Minecraft</option>
+                                <option value="bgmi" ${wizard.game.game_id==='bgmi'?'selected':''}>BGMI / PUBG</option>
+                                <option value="valorant" ${wizard.game.game_id==='valorant'?'selected':''}>Valorant</option>
+                                <option value="custom" ${wizard.game.game_id==='custom'?'selected':''}>Custom Game</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Select Game Mode</label>
+                            <select id="w-mode-select" class="input" onchange="onModeSelected(this.value)">
+                                ${renderModeOptionsForGame(wizard.game.game_id)}
+                            </select>
+                        </div>
+                        <div class="card" style="background:var(--bg4);border:1px dashed var(--border);padding:14px">
+                            <div style="display:flex;align-items:center;justify-content:space-between">
+                                <div><p style="font-size:12px;font-weight:700;color:var(--cyan)">Need more games or custom modes?</p><p style="font-size:10px;color:var(--text3)">Add games and modes dynamically in Games Manager</p></div>
+                                <button type="button" onclick="navigateTo('adminGamesPage')" class="btn btn-secondary btn-sm" style="width:auto"><i class="fas fa-plus"></i>Manage</button>
+                            </div>
+                        </div>
+                    </div>`;
+
+                case 3:
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>3. Tournament Format</span><span class="badge badge-admin">Step 3/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Configure match structure and squad distribution.</p>
+                        <div>
+                            <label class="label">Format Structure</label>
+                            <select id="w-format-type" class="input" onchange="wizard.format.type = this.value">
+                                <option value="Battle Royale" ${wizard.format.type==='Battle Royale'?'selected':''}>Battle Royale (Points Leaderboard)</option>
+                                <option value="Team vs Team" ${wizard.format.type==='Team vs Team'?'selected':''}>Team vs Team (Clash Squad / Match)</option>
+                                <option value="Knockout" ${wizard.format.type==='Knockout'?'selected':''}>Knockout Bracket / Elimination</option>
+                                <option value="League" ${wizard.format.type==='League'?'selected':''}>League / Group Stage</option>
+                                <option value="Custom" ${wizard.format.type==='Custom'?'selected':''}>Custom Format</option>
+                            </select>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div>
+                                <label class="label">Match Format</label>
+                                <select id="w-match-format" class="input">
+                                    <option value="Squad" ${wizard.format.match_format==='Squad'?'selected':''}>Squad (4 Players)</option>
+                                    <option value="Duo" ${wizard.format.match_format==='Duo'?'selected':''}>Duo (2 Players)</option>
+                                    <option value="Solo" ${wizard.format.match_format==='Solo'?'selected':''}>Solo (1 Player)</option>
+                                    <option value="BO1" ${wizard.format.match_format==='BO1'?'selected':''}>Best of 1 (BO1)</option>
+                                    <option value="BO3" ${wizard.format.match_format==='BO3'?'selected':''}>Best of 3 (BO3)</option>
+                                    <option value="BO5" ${wizard.format.match_format==='BO5'?'selected':''}>Best of 5 (BO5)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">Team Size (Players)</label>
+                                <input type="number" id="w-team-size" value="${wizard.format.team_size}" min="1" max="10" class="input">
+                            </div>
+                        </div>
+                    </div>`;
+
+                case 4:
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>4. Registration Settings</span><span class="badge badge-admin">Step 4/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Set entry fee, capacity, and registration deadlines.</p>
+                        <div>
+                            <label class="label">Entry Fee (BDT ৳) <span class="label-hint">(Set 0 for Free)</span></label>
+                            <input type="number" id="w-entry-fee" value="${wizard.registration.entry_fee}" min="0" placeholder="50" class="input">
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div><label class="label">Max Teams / Slots</label><input type="number" id="w-max-teams" value="${wizard.registration.max_teams}" min="2" class="input"></div>
+                            <div><label class="label">Max Total Players</label><input type="number" id="w-max-players" value="${wizard.registration.max_players}" min="2" class="input"></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div><label class="label">Registration Start</label><input type="datetime-local" id="w-reg-start" value="${wizard.registration.reg_start}" class="input"></div>
+                            <div><label class="label">Registration Deadline</label><input type="datetime-local" id="w-reg-deadline" value="${wizard.registration.reg_deadline}" class="input"></div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg4);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                            <input type="checkbox" id="w-auto-close" ${wizard.registration.auto_close?'checked':''} style="width:18px;height:18px;accent-color:var(--violet)">
+                            <label for="w-auto-close" style="font-size:12px;font-weight:600">Auto-close registration when full or deadline passes</label>
+                        </div>
+                    </div>`;
+
+                case 5:
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>5. Team & Player Configuration</span><span class="badge badge-admin">Step 5/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Define team size boundaries, substitutes, and required player identifiers.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div><label class="label">Min Players Per Team</label><input type="number" id="w-min-ts" value="${wizard.team_config.min_team_size}" min="1" class="input"></div>
+                            <div><label class="label">Max Players Per Team</label><input type="number" id="w-max-ts" value="${wizard.team_config.max_team_size}" min="1" class="input"></div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg4);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                            <input type="checkbox" id="w-sub-allow" ${wizard.team_config.substitutes_allowed?'checked':''} style="width:18px;height:18px;accent-color:var(--violet)">
+                            <label for="w-sub-allow" style="font-size:12px;font-weight:600">Allow Substitutes / Reserve Players</label>
+                        </div>
+                        <div><label class="label">Max Substitutes Count</label><input type="number" id="w-max-subs" value="${wizard.team_config.max_substitutes}" min="0" max="4" class="input"></div>
+                        <div class="card" style="background:var(--bg4);padding:14px">
+                            <p style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Required Player Form Fields</p>
+                            <div style="display:flex;flex-direction:column;gap:8px">
+                                <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="w-req-ign" ${wizard.team_config.require_in_game_name?'checked':''} style="accent-color:var(--violet)"> In-Game Name (IGN)</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="w-req-guid" ${wizard.team_config.require_game_uid?'checked':''} style="accent-color:var(--violet)"> In-Game Character UID</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="w-req-tname" ${wizard.team_config.require_team_name?'checked':''} style="accent-color:var(--violet)"> Team / Clan Name</label>
+                            </div>
+                        </div>
+                    </div>`;
+
+                case 6:
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>6. Scoring Engine</span><span class="badge badge-admin">Step 6/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Configure backend authoritative scoring rules.</p>
+                        <div>
+                            <label class="label">Number of Match Rounds</label>
+                            <input type="number" id="w-rounds" value="${wizard.scoring.rounds}" min="1" max="10" class="input">
+                        </div>
+                        <div>
+                            <label class="label">Kill Points (Points per verified kill)</label>
+                            <input type="number" id="w-kill-pts" value="${wizard.scoring.kill_points}" min="0" class="input">
+                        </div>
+                        <div class="card" style="background:var(--bg4);padding:14px">
+                            <p style="font-size:11px;font-weight:700;color:var(--cyan);text-transform:uppercase;margin-bottom:6px">Placement Points Table (BR Standard)</p>
+                            <p style="font-size:10px;color:var(--text4);margin-bottom:10px">1st: 12 pts, 2nd: 9 pts, 3rd: 8 pts, 4th: 7 pts, 5th: 6 pts, 6th: 5 pts, 7th: 4 pts, 8th: 3 pts, 9th: 2 pts, 10th: 1 pt</p>
+                            <div class="info-box" style="font-size:11px;color:var(--text3)"><i class="fas fa-calculator" style="margin-right:6px;color:var(--violet)"></i>Formula: <strong>Total Score = Placement Points + Kill Points + Bonus - Penalty</strong></div>
+                        </div>
+                    </div>`;
+
+                case 7:
+                    const tp = Number(wizard.prize.total_pool || 0);
+                    const p1 = Number(wizard.prize.first_place || 0);
+                    const p2 = Number(wizard.prize.second_place || 0);
+                    const p3 = Number(wizard.prize.third_place || 0);
+                    const mvp = Number(wizard.prize.mvp_reward || 0);
+                    const kRate = Number(wizard.prize.kill_reward_rate || 0);
+                    const kBudget = Number(wizard.prize.kill_reward_budget || 0);
+                    const customSum = (wizard.prize.custom_awards || []).reduce((s, a) => s + Number(a.amount || 0), 0);
+                    const allocated = p1 + p2 + p3 + mvp + kBudget + customSum;
+                    const remaining = tp - allocated;
+                    const isOver = allocated > tp;
+
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>7. Prize Pool & Rewards Builder</span><span class="badge badge-admin">Step 7/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Configure tournament rewards allocation. <strong style="color:var(--text2)">Note: Commission is excluded.</strong></p>
+                        <div>
+                            <label class="label">Total Prize Pool (BDT ৳) *</label>
+                            <input type="number" id="w-prize-pool" value="${wizard.prize.total_pool}" oninput="updatePrizeCalculations()" min="0" class="input" required>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+                            <div><label class="label">🥇 1st Place (৳)</label><input type="number" id="w-p1" value="${wizard.prize.first_place}" oninput="updatePrizeCalculations()" class="input"></div>
+                            <div><label class="label">🥈 2nd Place (৳)</label><input type="number" id="w-p2" value="${wizard.prize.second_place}" oninput="updatePrizeCalculations()" class="input"></div>
+                            <div><label class="label">🥉 3rd Place (৳)</label><input type="number" id="w-p3" value="${wizard.prize.third_place}" oninput="updatePrizeCalculations()" class="input"></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+                            <div><label class="label">⭐ MVP Reward (৳)</label><input type="number" id="w-mvp" value="${wizard.prize.mvp_reward}" oninput="updatePrizeCalculations()" class="input"></div>
+                            <div><label class="label">🎯 Reward / Kill (৳)</label><input type="number" id="w-krate" value="${wizard.prize.kill_reward_rate}" oninput="updatePrizeCalculations()" class="input"></div>
+                            <div><label class="label">💀 Kill Budget (৳)</label><input type="number" id="w-kbudget" value="${wizard.prize.kill_reward_budget}" oninput="updatePrizeCalculations()" class="input"></div>
+                        </div>
+
+                        <!-- Live Prize Pool Balance Meter -->
+                        <div class="card" style="background:var(--bg4);border:1px solid ${isOver?'var(--red)':'var(--border)'};padding:14px">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                                <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase">Allocation Status</span>
+                                <span style="font-size:12px;font-weight:800;color:${isOver?'var(--red)':'var(--green)'}">${isOver?'⚠️ OVER-ALLOCATED':'✓ BALANCED'}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                                <span>Allocated: <strong id="prize-alloc-txt">${fmt(allocated)}</strong></span>
+                                <span>Remaining: <strong id="prize-rem-txt" style="color:${isOver?'var(--red)':'var(--cyan)'}">${fmt(remaining)}</strong></span>
+                            </div>
+                            ${isOver ? `<p style="font-size:11px;color:var(--red);margin-top:6px"><i class="fas fa-exclamation-triangle"></i> Allocated rewards exceed total prize pool! Please adjust before publishing.</p>` : ''}
+                        </div>
+                    </div>`;
+
+                case 8:
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>8. Schedule & Match Timeline</span><span class="badge badge-admin">Step 8/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Timezone: <strong style="color:var(--cyan)">GMT+6 (Bangladesh Standard Time)</strong></p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div><label class="label">Tournament Start Date</label><input type="datetime-local" id="w-t-start" value="${wizard.schedule.tournament_start}" class="input"></div>
+                            <div><label class="label">Match Start Time *</label><input type="datetime-local" id="w-m-time" value="${wizard.schedule.match_time}" class="input" required></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div><label class="label">Check-in Start Time</label><input type="datetime-local" id="w-cin-start" value="${wizard.schedule.check_in_start}" class="input"></div>
+                            <div><label class="label">Room Unlock Time</label><input type="datetime-local" id="w-room-unlock" value="${wizard.schedule.room_unlock_time}" class="input"></div>
+                        </div>
+                    </div>`;
+
+                case 9:
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>9. Structured Tournament Rules</span><span class="badge badge-admin">Step 9/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Review and customize structured rules. Professional defaults have been pre-filled.</p>
+                        <div><label class="label">📌 General Rules</label><textarea id="w-r-gen" class="textarea">${wizard.rules.general}</textarea></div>
+                        <div><label class="label">🎮 Game & Gameplay Rules</label><textarea id="w-r-game" class="textarea">${wizard.rules.game_rules}</textarea></div>
+                        <div><label class="label">👥 Team & Roster Rules</label><textarea id="w-r-team" class="textarea">${wizard.rules.team_rules}</textarea></div>
+                        <div><label class="label">⚔️ Match & Room Rules</label><textarea id="w-r-match" class="textarea">${wizard.rules.match_rules}</textarea></div>
+                        <div><label class="label">🚫 Disqualification Rules</label><textarea id="w-r-dq" class="textarea">${wizard.rules.disqualification}</textarea></div>
+                        <div><label class="label">💰 Prize Claim Rules</label><textarea id="w-r-prize" class="textarea">${wizard.rules.prize_rules}</textarea></div>
+                    </div>`;
+
+                case 10:
+                    const pThumb = sanitizeUrl(wizard.basic.thumbnail_url);
+                    const pPool = wizard.prize.total_pool;
+                    const pFee = wizard.registration.entry_fee;
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>10. Live Esports Preview</span><span class="badge badge-admin">Step 10/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">This is how your tournament will appear to players on the app.</p>
+
+                        <!-- High-Fidelity Tournament Card Preview -->
+                        <div class="card" style="border:1px solid var(--violet);box-shadow:0 0 20px var(--violet-glow2);overflow:hidden;padding:0">
+                            ${pThumb ? `<div style="width:100%;height:160px;position:relative"><img src="${pThumb}" style="width:100%;height:100%;object-fit:cover"><div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(17,19,28,1) 0%, transparent 60%)"></div><span class="badge badge-upcoming" style="position:absolute;top:12px;right:12px">UPCOMING</span></div>` : ''}
+                            <div style="padding:16px">
+                                <h3 style="font-size:18px;font-weight:900;margin-bottom:4px">${wizard.basic.title || 'Untitled Tournament'}</h3>
+                                <p style="font-size:12px;color:var(--text3);margin-bottom:12px"><i class="fas fa-gamepad" style="margin-right:4px"></i>${wizard.game.game_name} • <span style="color:var(--cyan)">${wizard.game.mode_name} (${wizard.format.match_format})</span></p>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+                                    <div style="background:var(--bg4);padding:10px;border-radius:var(--radius-sm)"><p style="font-size:9px;color:var(--text4);font-weight:700;text-transform:uppercase">ENTRY FEE</p><p style="font-size:14px;font-weight:800">${pFee === 0 ? 'FREE' : fmt(pFee)}</p></div>
+                                    <div style="background:var(--bg4);padding:10px;border-radius:var(--radius-sm)"><p style="font-size:9px;color:var(--text4);font-weight:700;text-transform:uppercase">PRIZE POOL</p><p style="font-size:14px;font-weight:800;color:var(--green)">${fmt(pPool)}</p></div>
+                                </div>
+                                <div style="background:var(--bg4);padding:10px;border-radius:var(--radius-sm);font-size:11px;margin-bottom:12px">
+                                    <p style="font-weight:700;color:var(--text3);margin-bottom:4px">PRIZE DISTRIBUTION</p>
+                                    <div style="display:flex;justify-content:space-between"><span>1st: <strong>${fmt(wizard.prize.first_place)}</strong></span><span>2nd: <strong>${fmt(wizard.prize.second_place)}</strong></span><span>3rd: <strong>${fmt(wizard.prize.third_place)}</strong></span></div>
+                                    ${wizard.prize.mvp_reward ? `<div style="margin-top:4px;color:var(--yellow)">MVP: <strong>${fmt(wizard.prize.mvp_reward)}</strong></div>` : ''}
+                                </div>
+                                <div style="font-size:11px;color:var(--text3)"><i class="fas fa-clock" style="margin-right:4px"></i>Match Time: ${wizard.schedule.match_time ? new Date(wizard.schedule.match_time).toLocaleString() : 'TBD'}</div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                case 11:
+                    const valReport = validateTournament();
+                    return `
+                    <div class="space-y">
+                        <div class="section-title" style="margin-bottom:8px"><span>11. Validation & Publish</span><span class="badge badge-admin">Step 11/11</span></div>
+                        <p style="font-size:12px;color:var(--text3);margin-bottom:14px">System validation check before making tournament live.</p>
+                        <div class="card" style="background:var(--bg4);padding:16px;border:1px solid ${valReport.isValid?'var(--border)':'var(--red)'}">
+                            <h4 style="font-size:14px;font-weight:800;margin-bottom:10px"><i class="fas fa-clipboard-check" style="color:var(--cyan);margin-right:6px"></i>Validation Checklist</h4>
+                            <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+                                <div style="display:flex;align-items:center;justify-content:space-between"><span>Tournament Name</span><span style="color:${wizard.basic.title?'var(--green)':'var(--red)'}">${wizard.basic.title?'✓ Valid':'✗ Missing'}</span></div>
+                                <div style="display:flex;align-items:center;justify-content:space-between"><span>Game & Mode</span><span style="color:var(--green)">✓ Selected</span></div>
+                                <div style="display:flex;align-items:center;justify-content:space-between"><span>Prize Distribution Balance</span><span style="color:${valReport.isPrizeValid?'var(--green)':'var(--red)'}">${valReport.isPrizeValid?'✓ Balanced':'✗ Exceeds Pool'}</span></div>
+                                <div style="display:flex;align-items:center;justify-content:space-between"><span>Match Time</span><span style="color:${wizard.schedule.match_time?'var(--green)':'var(--yellow)'}">${wizard.schedule.match_time?'✓ Set':'⚠️ Recommended'}</span></div>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+                            <button onclick="saveDraft()" class="btn btn-outline"><i class="fas fa-save"></i>Save as Draft</button>
+                            <button onclick="publishTournament()" class="btn btn-success" ${valReport.isValid?'':'disabled'}><i class="fas fa-rocket"></i>Publish Live</button>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function renderModeOptionsForGame(gameId) {
+            const modes = Object.values(DEFAULT_MODES).filter(m => m.game_id === gameId);
+            if (!modes.length) return `<option value="custom">Standard Match</option>`;
+            return modes.map(m => `<option value="${m.id}" ${wizard.game.mode_id===m.id?'selected':''}>${m.name}</option>`).join('');
+        }
+
+        function onGameSelected(gid) {
+            wizard.game.game_id = gid;
+            const names = { free_fire: 'Free Fire', minecraft: 'Minecraft', bgmi: 'BGMI / PUBG', valorant: 'Valorant', custom: 'Custom Game' };
+            wizard.game.game_name = names[gid] || 'Esports Game';
+            const sel = document.getElementById('w-mode-select');
+            if (sel) {
+                sel.innerHTML = renderModeOptionsForGame(gid);
+                onModeSelected(sel.value);
+            }
+        }
+
+        function onModeSelected(mid) {
+            wizard.game.mode_id = mid;
+            const mObj = DEFAULT_MODES[mid];
+            if (mObj) {
+                wizard.game.mode_name = mObj.name;
+                wizard.format.type = mObj.type === 'battle_royale' ? 'Battle Royale' : 'Team vs Team';
+                wizard.format.team_size = mObj.default_team_size || 4;
+                wizard.team_config.min_team_size = mObj.default_team_size || 4;
+                wizard.team_config.max_team_size = mObj.default_team_size || 4;
+                wizard.scoring.type = mObj.scoring_type || 'br_points';
+            }
+        }
+
+        function handleThumbError() {
+            const box = document.getElementById('thumbPreviewBox');
+            if (box) box.innerHTML = `<div class="thumb-placeholder" style="color:var(--red)"><i class="fas fa-triangle-exclamation"></i><p style="font-size:11px">Failed to load image. Check URL.</p></div>`;
+        }
+
+        function attachStepEventHandlers() {
+            const thumbInput = document.getElementById('w-thumbnail');
+            if (thumbInput) {
+                thumbInput.addEventListener('input', e => {
+                    const clean = sanitizeUrl(e.target.value);
+                    wizard.basic.thumbnail_url = e.target.value;
+                    const box = document.getElementById('thumbPreviewBox');
+                    if (!box) return;
+                    if (clean) {
+                        box.innerHTML = `<img src="${clean}" class="thumb-preview-img" onerror="handleThumbError()">`;
+                    } else {
+                        box.innerHTML = `<div class="thumb-placeholder"><i class="fas fa-image"></i><p style="font-size:11px">Enter valid http/https image URL</p></div>`;
+                    }
+                });
+            }
+        }
+
+        function saveCurrentStepFields() {
+            if (wizard.step === 1) {
+                const t = document.getElementById('w-title'), sd = document.getElementById('w-short-desc'), fd = document.getElementById('w-full-desc'), th = document.getElementById('w-thumbnail'), pf = document.getElementById('w-platform'), rg = document.getElementById('w-region');
+                if (t) wizard.basic.title = t.value.trim();
+                if (sd) wizard.basic.short_desc = sd.value.trim();
+                if (fd) wizard.basic.full_desc = fd.value.trim();
+                if (th) wizard.basic.thumbnail_url = th.value.trim();
+                if (pf) wizard.basic.platform = pf.value;
+                if (rg) wizard.basic.region = rg.value;
+            } else if (wizard.step === 3) {
+                const ts = document.getElementById('w-team-size'), mf = document.getElementById('w-match-format');
+                if (ts) wizard.format.team_size = Number(ts.value) || 4;
+                if (mf) wizard.format.match_format = mf.value;
+            } else if (wizard.step === 4) {
+                const fee = document.getElementById('w-entry-fee'), mt = document.getElementById('w-max-teams'), mp = document.getElementById('w-max-players'), rs = document.getElementById('w-reg-start'), rd = document.getElementById('w-reg-deadline'), ac = document.getElementById('w-auto-close');
+                if (fee) wizard.registration.entry_fee = Number(fee.value) || 0;
+                if (mt) wizard.registration.max_teams = Number(mt.value) || 12;
+                if (mp) wizard.registration.max_players = Number(mp.value) || 48;
+                if (rs) wizard.registration.reg_start = rs.value;
+                if (rd) wizard.registration.reg_deadline = rd.value;
+                if (ac) wizard.registration.auto_close = ac.checked;
+            } else if (wizard.step === 5) {
+                const mits = document.getElementById('w-min-ts'), mats = document.getElementById('w-max-ts'), sa = document.getElementById('w-sub-allow'), ms = document.getElementById('w-max-subs'), rign = document.getElementById('w-req-ign'), rguid = document.getElementById('w-req-guid'), rtname = document.getElementById('w-req-tname');
+                if (mits) wizard.team_config.min_team_size = Number(mits.value) || 1;
+                if (mats) wizard.team_config.max_team_size = Number(mats.value) || 4;
+                if (sa) wizard.team_config.substitutes_allowed = sa.checked;
+                if (ms) wizard.team_config.max_substitutes = Number(ms.value) || 1;
+                if (rign) wizard.team_config.require_in_game_name = rign.checked;
+                if (rguid) wizard.team_config.require_game_uid = rguid.checked;
+                if (rtname) wizard.team_config.require_team_name = rtname.checked;
+            } else if (wizard.step === 6) {
+                const r = document.getElementById('w-rounds'), kp = document.getElementById('w-kill-pts');
+                if (r) wizard.scoring.rounds = Number(r.value) || 3;
+                if (kp) wizard.scoring.kill_points = Number(kp.value) || 1;
+            } else if (wizard.step === 7) {
+                const tp = document.getElementById('w-prize-pool'), p1 = document.getElementById('w-p1'), p2 = document.getElementById('w-p2'), p3 = document.getElementById('w-p3'), mvp = document.getElementById('w-mvp'), kr = document.getElementById('w-krate'), kb = document.getElementById('w-kbudget');
+                if (tp) wizard.prize.total_pool = Number(tp.value) || 0;
+                if (p1) wizard.prize.first_place = Number(p1.value) || 0;
+                if (p2) wizard.prize.second_place = Number(p2.value) || 0;
+                if (p3) wizard.prize.third_place = Number(p3.value) || 0;
+                if (mvp) wizard.prize.mvp_reward = Number(mvp.value) || 0;
+                if (kr) wizard.prize.kill_reward_rate = Number(kr.value) || 0;
+                if (kb) wizard.prize.kill_reward_budget = Number(kb.value) || 0;
+            } else if (wizard.step === 8) {
+                const ts = document.getElementById('w-t-start'), mt = document.getElementById('w-m-time'), cs = document.getElementById('w-cin-start'), ru = document.getElementById('w-room-unlock');
+                if (ts) wizard.schedule.tournament_start = ts.value;
+                if (mt) wizard.schedule.match_time = mt.value;
+                if (cs) wizard.schedule.check_in_start = cs.value;
+                if (ru) wizard.schedule.room_unlock_time = ru.value;
+            } else if (wizard.step === 9) {
+                const rg = document.getElementById('w-r-gen'), rgm = document.getElementById('w-r-game'), rt = document.getElementById('w-r-team'), rm = document.getElementById('w-r-match'), rd = document.getElementById('w-r-dq'), rp = document.getElementById('w-r-prize');
+                if (rg) wizard.rules.general = rg.value;
+                if (rgm) wizard.rules.game_rules = rgm.value;
+                if (rt) wizard.rules.team_rules = rt.value;
+                if (rm) wizard.rules.match_rules = rm.value;
+                if (rd) wizard.rules.disqualification = rd.value;
+                if (rp) wizard.rules.prize_rules = rp.value;
+            }
+        }
+
+        function updatePrizeCalculations() {
+            saveCurrentStepFields();
+            const tp = Number(wizard.prize.total_pool || 0);
+            const p1 = Number(wizard.prize.first_place || 0);
+            const p2 = Number(wizard.prize.second_place || 0);
+            const p3 = Number(wizard.prize.third_place || 0);
+            const mvp = Number(wizard.prize.mvp_reward || 0);
+            const kb = Number(wizard.prize.kill_reward_budget || 0);
+            const allocated = p1 + p2 + p3 + mvp + kb;
+            const remaining = tp - allocated;
+            const isOver = allocated > tp;
+
+            const aEl = document.getElementById('prize-alloc-txt');
+            const rEl = document.getElementById('prize-rem-txt');
+            if (aEl) aEl.textContent = fmt(allocated);
+            if (rEl) {
+                rEl.textContent = fmt(remaining);
+                rEl.style.color = isOver ? 'var(--red)' : 'var(--cyan)';
+            }
+        }
+
+        function validateTournament() {
+            const hasTitle = Boolean(wizard.basic.title && wizard.basic.title.trim());
+            const tp = Number(wizard.prize.total_pool || 0);
+            const p1 = Number(wizard.prize.first_place || 0);
+            const p2 = Number(wizard.prize.second_place || 0);
+            const p3 = Number(wizard.prize.third_place || 0);
+            const mvp = Number(wizard.prize.mvp_reward || 0);
+            const kb = Number(wizard.prize.kill_reward_budget || 0);
+            const isPrizeValid = (p1 + p2 + p3 + mvp + kb) <= tp;
+            return {
+                hasTitle,
+                isPrizeValid,
+                isValid: hasTitle && isPrizeValid
+            };
+        }
+
+        // Save Tournament as Draft
+        async function saveDraft() {
+            saveCurrentStepFields();
+            const draftData = {
+                ...wizard,
+                title: wizard.basic.title || 'Untitled Draft',
+                game_name: wizard.game.game_name,
+                game_type: wizard.game.mode_name,
+                entry_fee: Number(wizard.registration.entry_fee || 0),
+                prize_pool: Number(wizard.prize.total_pool || 0),
+                match_time: wizard.schedule.match_time ? new Date(wizard.schedule.match_time).toISOString() : new Date().toISOString(),
+                status: 'DRAFT',
+                updated_at: new Date().toISOString()
+            };
+            try {
+                if (wizard.id) {
+                    await db.ref(`tournaments/${wizard.id}`).update(draftData);
+                } else {
+                    draftData.created_at = new Date().toISOString();
+                    const newRef = await db.ref('tournaments').push(draftData);
+                    wizard.id = newRef.key;
+                    currentDraftId = newRef.key;
+                }
+                await logAudit('DRAFT_SAVED', wizard.id, { title: draftData.title });
+                showToast('Draft saved! 📝');
+            } catch (err) {
+                showToast('Failed to save draft', true);
+            }
+        }
+
+        // Publish Tournament Live
+        async function publishTournament() {
+            saveCurrentStepFields();
+            const val = validateTournament();
+            if (!val.hasTitle) return showToast('Tournament title is required!', true);
+            if (!val.isPrizeValid) return showToast('Prize rewards exceed total prize pool!', true);
+
+            const publishData = {
+                ...wizard,
+                title: wizard.basic.title,
+                game_name: wizard.game.game_name,
+                game_type: wizard.game.mode_name,
+                entry_fee: Number(wizard.registration.entry_fee || 0),
+                prize_pool: Number(wizard.prize.total_pool || 0),
+                match_time: wizard.schedule.match_time ? new Date(wizard.schedule.match_time).toISOString() : new Date(Date.now() + 86400000).toISOString(),
+                status: 'Upcoming',
+                updated_at: new Date().toISOString()
+            };
+
+            try {
+                if (wizard.id) {
+                    await db.ref(`tournaments/${wizard.id}`).update(publishData);
+                } else {
+                    publishData.created_at = new Date().toISOString();
+                    const newRef = await db.ref('tournaments').push(publishData);
+                    wizard.id = newRef.key;
+                }
+                await logAudit('TOURNAMENT_PUBLISHED', wizard.id, { title: publishData.title, prize_pool: publishData.prize_pool });
+                showToast('Tournament Published Live! 🎉🚀');
+                currentDraftId = null;
+                navigateTo('adminTournamentPage');
+            } catch (err) {
+                showToast('Failed to publish tournament', true);
+            }
+        }
+
+        // Continue editing an existing draft
+        function editDraft(tid) {
+            navigateTo('adminCreateTournamentPage', { draftId: tid, preserve: true });
+        }
+
+        // Duplicate an existing tournament into a new Draft
+        async function duplicateTournament(tid) {
+            try {
+                const snap = await db.ref(`tournaments/${tid}`).once('value');
+                if (!snap.exists()) return showToast('Tournament not found', true);
+                const orig = snap.val();
+                const clone = {
+                    ...getInitialWizardState(),
+                    ...orig,
+                    basic: { ...orig.basic, title: `${orig.title || orig.basic?.title || 'Tournament'} (Copy)` },
+                    title: `${orig.title || 'Tournament'} (Copy)`,
+                    status: 'DRAFT',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                delete clone.id;
+                delete clone.room_id;
+                delete clone.room_password;
+                delete clone.winner_id;
+
+                const newRef = await db.ref('tournaments').push(clone);
+                await logAudit('TOURNAMENT_DUPLICATED', newRef.key, { original_id: tid });
+                showToast('Duplicated as Draft! 📋');
+                loadTournamentsList();
+            } catch (e) { showToast('Failed to duplicate', true) }
+        }
+
+        async function deleteTournament(id) {
+            if (!confirm('Are you sure you want to permanently delete this tournament?')) return;
+            try {
+                await db.ref().update({ [`/tournaments/${id}`]: null, [`/participants/${id}`]: null });
+                await logAudit('TOURNAMENT_DELETED', id);
+                showToast('Tournament Deleted');
+                loadTournamentsList();
+            } catch (err) { showToast('Failed to delete', true) }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // GAMES & MODES MANAGER
+        // ══════════════════════════════════════════════════════════════
+        async function renderGamesManager(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+                <div class="section-title" style="margin-bottom:0"><i class="fas fa-gamepad" style="color:var(--cyan)"></i>Games & Modes</div>
+                <button onclick="showAddGameModal()" class="btn btn-primary btn-sm" style="width:auto"><i class="fas fa-plus"></i>Add Game</button>
+            </div>
+            <div id="add-game-box" style="display:none;margin-bottom:16px" class="scale-in">
+                <div class="card" style="border:1px solid var(--border)">
+                    <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;color:var(--cyan)"><i class="fas fa-plus-circle" style="margin-right:6px"></i>Register New Game</h3>
+                    <form id="newGameForm" class="space-y">
+                        <div><label class="label">Game Key (e.g. cod_mobile)</label><input type="text" id="ng-id" placeholder="cod_mobile" class="input" required></div>
+                        <div><label class="label">Game Display Name</label><input type="text" id="ng-name" placeholder="Call of Duty Mobile" class="input" required></div>
+                        <div><label class="label">Platform</label><select id="ng-platform" class="input"><option value="Mobile">Mobile</option><option value="PC">PC</option><option value="Console">Console</option><option value="Cross-Platform">Cross-Platform</option></select></div>
+                        <div style="display:flex;gap:8px"><button type="submit" class="btn btn-primary btn-sm" style="flex:1">Save Game</button><button type="button" onclick="hideAddGameModal()" class="btn btn-outline btn-sm" style="flex:1">Cancel</button></div>
+                    </form>
+                </div>
+            </div>
+            <div id="games-list-view" class="space-y"><div style="text-align:center;padding:40px"><div class="neon-spinner"></div></div></div>
+            </div>`;
+            document.getElementById('newGameForm')?.addEventListener('submit', createGame);
+            loadGamesList();
+        }
+
+        function showAddGameModal() { const el = document.getElementById('add-game-box'); if (el) el.style.display = 'block'; }
+        function hideAddGameModal() { const el = document.getElementById('add-game-box'); if (el) el.style.display = 'none'; }
+
+        async function loadGamesList() {
+            const el = document.getElementById('games-list-view'); if (!el) return;
+            const gSnap = await db.ref('games').once('value');
+            const games = gSnap.val() || DEFAULT_GAMES;
+            const mSnap = await db.ref('game_modes').once('value');
+            const modes = mSnap.val() || DEFAULT_MODES;
+
+            el.innerHTML = Object.entries(games).map(([gid, g]) => {
+                const gModes = Object.values(modes).filter(m => m.game_id === gid);
+                return `
+                <div class="card fade-up" style="padding:16px;margin-bottom:12px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <div style="width:36px;height:36px;border-radius:var(--radius-sm);background:var(--gradient-subtle);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--cyan)"><i class="fas ${g.icon || 'fa-gamepad'}"></i></div>
+                            <div><p style="font-weight:800;font-size:14px">${g.name}</p><p style="font-size:10px;color:var(--text4)">${g.platform || 'Cross-Platform'}</p></div>
+                        </div>
+                        <button onclick="showAddModePrompt('${gid}')" class="btn btn-secondary btn-sm" style="width:auto;padding:6px 12px"><i class="fas fa-plus"></i>Mode</button>
+                    </div>
+                    <div style="background:var(--bg4);padding:10px;border-radius:var(--radius-sm);font-size:11px">
+                        <p style="font-size:9px;font-weight:700;color:var(--text4);text-transform:uppercase;margin-bottom:6px">Supported Game Modes (${gModes.length})</p>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+                            ${gModes.map(m => `<span style="background:var(--bg5);border:1px solid var(--border3);padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;color:var(--text2)">${m.name}</span>`).join('') || '<span style="color:var(--text4)">No custom modes yet</span>'}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function createGame(e) {
+            e.preventDefault();
+            const id = document.getElementById('ng-id').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+            const name = document.getElementById('ng-name').value.trim();
+            const platform = document.getElementById('ng-platform').value;
+            if (!id || !name) return showToast('Fill all fields!', true);
+            try {
+                await db.ref(`games/${id}`).set({ id, name, platform, icon: 'fa-gamepad', created_at: new Date().toISOString() });
+                // Add default match mode
+                await db.ref(`game_modes/${id}_std`).set({ id: `${id}_std`, game_id: id, name: 'Standard Match', type: 'custom', default_team_size: 1 });
+                await logAudit('GAME_ADDED', null, { game_id: id, name });
+                showToast('Game Added Successfully! 🎮');
+                hideAddGameModal();
+                loadGamesList();
+            } catch (err) { showToast(err.message, true) }
+        }
+
+        async function showAddModePrompt(gid) {
+            const mName = prompt('Enter New Mode Name (e.g. TDM 4v4):');
+            if (!mName) return;
+            const mId = `${gid}_${mName.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
+            try {
+                await db.ref(`game_modes/${mId}`).set({
+                    id: mId,
+                    game_id: gid,
+                    name: mName,
+                    type: 'team_vs_team',
+                    default_team_size: 4
+                });
+                showToast('Mode added! 🎯');
+                loadGamesList();
+            } catch (e) { showToast('Failed to add mode', true) }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // MANAGE TOURNAMENT / MATCH RESULTS
+        // ══════════════════════════════════════════════════════════════
+        async function renderManage(c) {
+            if (!currentTournamentId) { c.innerHTML = `<div class="empty-state"><p style="color:var(--text3)">No tournament selected</p></div>`; return }
+            c.innerHTML = `<div style="padding:20px" class="fade-in" id="manage-content"><div style="text-align:center;padding:60px"><div class="neon-spinner"></div></div></div>`;
+            const el = document.getElementById('manage-content');
+            const t = (await db.ref(`tournaments/${currentTournamentId}`).once('value')).val();
+            const parts = (await db.ref(`participants/${currentTournamentId}`).once('value')).val() || {};
+            let opts = '', pHtml = '';
+            for (const pId in parts) {
+                const u = (await db.ref(`users/${pId}`).once('value')).val(); if (u) {
+                    opts += `<option value="${pId}">${u.username} (${parts[pId].game_name || parts[pId].game_uid || 'Player'})</option>`;
+                    pHtml += `<div class="card" style="padding:12px;margin-bottom:8px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                        <span style="font-weight:700;font-size:13px">${u.username}</span>
+                        <span class="badge ${parts[pId].status==='Winner'?'badge-admin':'badge-pending'}" style="font-size:8px">${parts[pId].status==='Winner'?'👑 Winner':'Active'}</span>
+                    </div>
+                    <p style="font-size:11px;color:var(--text3)"><i class="fas fa-user" style="margin-right:4px"></i>${parts[pId].game_name || 'N/A'} • UID: ${parts[pId].game_uid || 'N/A'}${parts[pId].team_name ? ' • <span style="color:var(--cyan)">Team: ' + parts[pId].team_name + '</span>' : ''}</p>
+                    </div>`;
+                }
+            }
+            el.innerHTML = `
+            <button onclick="navigateTo('adminTournamentPage')" class="btn btn-ghost btn-sm" style="margin-bottom:14px;color:var(--text3)"><i class="fas fa-arrow-left"></i> Back</button>
+            <h2 style="font-size:20px;font-weight:900;margin-bottom:2px">${t.title || 'Tournament'}</h2>
+            <p style="font-size:11px;color:var(--text3);margin-bottom:16px"><i class="fas fa-gamepad" style="margin-right:4px"></i>${t.game_name || 'Game'} • ${t.game_type || 'Match'}</p>
+            <div class="card fade-up stagger-1" style="margin-bottom:12px">
+                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-door-open" style="color:var(--cyan)"></i>Room & Match Status</h3>
+                <form id="roomDetailsForm" class="space-y">
+                    <div><label class="label">Room ID</label><input type="text" id="t-roomid" value="${t.room_id||''}" placeholder="Enter Room ID" class="input"></div>
+                    <div><label class="label">Room Password</label><input type="text" id="t-roompass" value="${t.room_password||''}" placeholder="Enter Password" class="input"></div>
+                    <div><label class="label">Status</label><select id="t-status" class="input"><option value="Upcoming" ${t.status==='Upcoming'?'selected':''}>Upcoming</option><option value="Live" ${t.status==='Live'?'selected':''}>Live</option><option value="Completed" ${t.status==='Completed'?'selected':''}>Completed</option></select></div>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i>Update Room & Status</button>
+                </form>
+            </div>
+            ${t.status !== 'Completed' ? `<div class="card fade-up stagger-2" style="margin-bottom:12px">
+                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-crown" style="color:var(--yellow)"></i>Declare Winner & Payout</h3>
+                <form id="winnerForm" class="space-y">
+                    <div><label class="label">Select Winner</label><select id="winner-select" class="input"><option value="">Choose participant...</option>${opts}</select></div>
+                    <div class="info-box" style="font-size:11px"><i class="fas fa-gift" style="margin-right:6px;color:var(--green)"></i>Prize ${fmt(t.prize_pool || t.prize?.total_pool)} will be instantly sent to winner's wallet</div>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-trophy"></i>Confirm & Payout Winner</button>
+                </form>
+            </div>` : `<div class="info-box" style="text-align:center;margin-bottom:12px;background:var(--green-glow);color:var(--green)"><i class="fas fa-check-circle" style="margin-right:6px"></i><strong>Tournament Completed</strong></div>`}
+            <div class="card fade-up stagger-3">
+                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-users" style="color:var(--violet)"></i>Participants (${Object.keys(parts).length})</h3>
+                <div style="max-height:300px;overflow-y:auto">${pHtml || '<p style="text-align:center;color:var(--text4);padding:20px;font-size:12px">No participants joined yet</p>'}</div>
+            </div>`;
+            document.getElementById('roomDetailsForm').addEventListener('submit', updateRoomDetails);
+            document.getElementById('winnerForm')?.addEventListener('submit', declareWinner);
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // PAYMENTS & WITHDRAWALS
+        // ══════════════════════════════════════════════════════════════
+        let curPaymentTab = 'withdrawals';
+        async function renderPayments(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div class="section-title"><i class="fas fa-credit-card" style="color:var(--cyan)"></i>Payments & Gateway</div>
+            <div class="tab-bar"><div id="tab-w" class="tab ${curPaymentTab==='withdrawals'?'active':''}" onclick="switchPayTab('withdrawals')">Withdrawals</div><div id="tab-d" class="tab ${curPaymentTab==='deposits'?'active':''}" onclick="switchPayTab('deposits')">Deposits</div></div>
+            <div id="pay-content"><div style="text-align:center;padding:40px"><div class="neon-spinner"></div></div></div>
+            </div>`;
+            loadPaymentTabContent();
+        }
+
+        function switchPayTab(t) { curPaymentTab = t; renderPayments(document.getElementById('adminPaymentsPage')) }
+
+        async function loadPaymentTabContent() {
+            const el = document.getElementById('pay-content'); if (!el) return;
+            if (curPaymentTab === 'withdrawals') {
+                const snap = await db.ref('payment_requests').orderByChild('status').equalTo('pending').once('value');
+                const pending = snap.val() || {};
+                const list = Object.entries(pending);
+                if (!list.length) { el.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="font-size:32px;color:var(--green);margin-bottom:10px"></i><p style="color:var(--text3);font-size:13px">No pending withdrawal requests</p></div>`; return }
+                el.innerHTML = list.map(([rId, r]) => `
+                <div class="card fade-up" style="margin-bottom:10px;padding:16px">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                        <div><p style="font-weight:700;font-size:14px">${r.username || 'User'}</p><p style="font-size:11px;color:var(--text3)"><i class="fas fa-phone" style="margin-right:4px"></i>${r.phone_number} • <span style="color:var(--cyan)">${r.payment_method?.toUpperCase()}</span></p></div>
+                        <p style="font-size:16px;font-weight:900;color:var(--yellow)">${fmt(r.amount)}</p>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:12px">
+                        <button onclick="approvePayment('${rId}','${r.type}','${r.user_id}',${r.amount})" class="btn btn-success btn-sm" style="flex:1"><i class="fas fa-check"></i>Approve</button>
+                        <button onclick="rejectPayment('${rId}')" class="btn btn-danger btn-sm" style="flex:1"><i class="fas fa-times"></i>Reject</button>
+                    </div>
+                </div>`).join('');
+            } else {
+                const snap = await db.ref('deposits').orderByChild('created_at').limitToLast(20).once('value');
+                const deps = snap.val() || {};
+                const list = Object.entries(deps).reverse();
+                if (!list.length) { el.innerHTML = `<div class="empty-state"><p style="color:var(--text3);font-size:13px">No UddoktaPay deposits recorded yet</p></div>`; return }
+                el.innerHTML = list.map(([, d]) => `
+                <div class="card fade-up" style="margin-bottom:10px;padding:14px">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div><p style="font-weight:700;font-size:13px">${d.username || d.user_id || 'User'}</p><p style="font-size:10px;color:var(--text4)">Invoice: ${d.invoice_id || 'N/A'}</p></div>
+                        <div style="text-align:right"><p style="font-size:14px;font-weight:900;color:var(--green)">${fmt(d.amount)}</p><span class="badge ${d.status==='completed'?'badge-approved':'badge-pending'}" style="font-size:8px">${d.status}</span></div>
+                    </div>
+                </div>`).join('');
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // USERS & SETTINGS
+        // ══════════════════════════════════════════════════════════════
+        async function renderUsers(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+                <div class="section-title" style="margin-bottom:0"><i class="fas fa-users" style="color:var(--violet)"></i>Users Management</div>
+            </div>
+            <div id="users-list-view" class="space-y"><div style="text-align:center;padding:40px"><div class="neon-spinner"></div></div></div>
+            </div>`;
+            const el = document.getElementById('users-list-view');
+            const snap = await db.ref('users').once('value');
+            const us = snap.val() || {};
+            el.innerHTML = Object.entries(us).map(([uid, u]) => `
+            <div class="card fade-up" style="padding:14px;margin-bottom:10px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <div><p style="font-weight:700;font-size:13px">${u.username || 'User'} ${u.role==='admin'?'<span class="badge badge-admin" style="font-size:8px;margin-left:4px">Admin</span>':''}</p><p style="font-size:10px;color:var(--text4)">${u.email}</p></div>
+                    <p style="font-size:15px;font-weight:900;color:var(--green)">${fmt(u.wallet_balance||0)}</p>
+                </div>
+                <div style="display:flex;gap:6px">
+                    <button onclick="addMoneyToUser('${uid}','${u.username||'User'}')" class="btn btn-secondary btn-sm" style="flex:1"><i class="fas fa-plus"></i>Add ৳</button>
+                    <button onclick="deductMoneyFromUser('${uid}','${u.username||'User'}')" class="btn btn-outline btn-sm" style="flex:1"><i class="fas fa-minus"></i>Deduct ৳</button>
+                </div>
+            </div>`).join('');
+        }
+
+        async function renderSettings(c) {
+            const bd = (await db.ref('app_settings/banner').once('value')).val() || { title: "Welcome to Velrix Tournaments", subtitle: "Compete. Win. Dominate.", enabled: true };
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div class="section-title"><i class="fas fa-cog" style="color:var(--text3)"></i>Settings & Config</div>
+            <div class="card fade-up stagger-1" style="margin-bottom:12px">
+                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-image" style="color:var(--cyan)"></i>Home Banner Settings</h3>
+                <form id="bannerSettingsForm" class="space-y">
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg4);border-radius:var(--radius-sm)"><input type="checkbox" id="banner-enabled" ${bd.enabled?'checked':''} style="accent-color:var(--violet)"><label for="banner-enabled" style="font-size:12px;font-weight:600">Enable Banner</label></div>
+                    <div><label class="label">Banner Title</label><input type="text" id="banner-title" value="${bd.title}" class="input" required></div>
+                    <div><label class="label">Banner Subtitle</label><input type="text" id="banner-subtitle" value="${bd.subtitle}" class="input" required></div>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i>Save Banner</button>
+                </form>
+            </div>
+            <a href="index.html" class="btn btn-outline fade-up stagger-2" style="text-decoration:none;margin-bottom:10px"><i class="fas fa-external-link-alt"></i>Open Player App</a>
+            <div class="watermark">Velrix Esports Admin v4.0 — <span>AeroX Studio</span></div>
+            </div>`;
+            document.getElementById('bannerSettingsForm')?.addEventListener('submit', async e => {
+                e.preventDefault();
+                await db.ref('app_settings/banner').set({
+                    enabled: document.getElementById('banner-enabled').checked,
+                    title: document.getElementById('banner-title').value,
+                    subtitle: document.getElementById('banner-subtitle').value
+                });
+                showToast('Banner Settings Saved! ✨');
+            });
+        }
+
+        // Actions
+        async function updateRoomDetails(e) {
+            e.preventDefault(); const b = e.target.querySelector('button[type="submit"]'); b.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Saving...'; b.disabled = true;
+            try {
+                await db.ref(`tournaments/${currentTournamentId}`).update({ room_id: document.getElementById('t-roomid').value, room_password: document.getElementById('t-roompass').value, status: document.getElementById('t-status').value });
+                showToast('Room Details & Status Updated! ✅'); renderManage(document.getElementById('adminManageTournamentPage'));
+            } catch (err) { showToast('Failed', true); b.innerHTML = '<i class="fas fa-save"></i>Update Room & Status'; b.disabled = false }
+        }
+
+        async function declareWinner(e) {
+            e.preventDefault(); const wId = document.getElementById('winner-select').value; if (!wId) return showToast('Select winner!', true);
+            if (!confirm('Declare winner? Prize will be credited to winner wallet.')) return;
+            try {
+                const t = (await db.ref(`tournaments/${currentTournamentId}`).once('value')).val();
+                const w = (await db.ref(`users/${wId}`).once('value')).val();
+                const prize = Number(t.prize_pool || t.prize?.total_pool || 0);
+                await db.ref().update({
+                    [`/tournaments/${currentTournamentId}/status`]: 'Completed',
+                    [`/tournaments/${currentTournamentId}/winner_id`]: wId,
+                    [`/participants/${currentTournamentId}/${wId}/status`]: 'Winner',
+                    [`/users/${wId}/wallet_balance`]: (w.wallet_balance || 0) + prize,
+                    [`/transactions/${wId}/${db.ref().child('transactions').push().key}`]: { amount: prize, type: 'credit', description: `Prize: ${t.title}`, created_at: new Date().toISOString() }
+                });
+                await logAudit('WINNER_DECLARED', currentTournamentId, { winner_uid: wId, prize });
+                showToast('Winner Declared and Prize Distributed! 👑'); renderManage(document.getElementById('adminManageTournamentPage'));
+            } catch (e) { showToast('Failed to declare winner', true) }
+        }
+
+        async function approvePayment(rId, type, uId, amt) {
+            if (!confirm(`Approve ${fmt(amt)}?`)) return;
+            const u = (await db.ref(`users/${uId}`).once('value')).val();
+            let nb = type === 'deposit' ? (u.wallet_balance || 0) + amt : (u.wallet_balance || 0) - amt;
+            await db.ref().update({ [`/payment_requests/${rId}/status`]: 'approved', [`/payment_requests/${rId}/approved_at`]: new Date().toISOString(), [`/users/${uId}/wallet_balance`]: nb, [`/transactions/${uId}/${db.ref().child('transactions').push().key}`]: { amount: amt, type: type === 'deposit' ? 'credit' : 'debit', description: `${type} - Approved`, created_at: new Date().toISOString() } });
+            showToast('Approved! 💰'); renderPayments(document.getElementById('adminPaymentsPage'));
+        }
+
+        async function rejectPayment(rId) {
+            if (!confirm('Reject this payment?')) return;
+            await db.ref(`payment_requests/${rId}`).update({ status: 'rejected', rejected_at: new Date().toISOString() });
+            showToast('Rejected'); renderPayments(document.getElementById('adminPaymentsPage'));
+        }
+
+        async function addMoneyToUser(uid, name) {
+            const a = prompt(`Amount to add to ${name}'s wallet (৳):`); if (!a || isNaN(a) || Number(a) <= 0) return showToast('Invalid amount!', true);
+            const u = (await db.ref(`users/${uid}`).once('value')).val();
+            await db.ref().update({ [`/users/${uid}/wallet_balance`]: (u.wallet_balance||0)+Number(a), [`/transactions/${uid}/${db.ref().child('transactions').push().key}`]: { amount: Number(a), type: 'credit', description: 'Added by admin', created_at: new Date().toISOString() } });
+            showToast(`Added ${fmt(a)}! 💸`); renderUsers(document.getElementById('adminUsersPage'));
+        }
+
+        async function deductMoneyFromUser(uid, name) {
+            const a = prompt(`Amount to deduct from ${name} (৳):`); if (!a || isNaN(a) || Number(a) <= 0) return showToast('Invalid amount!', true);
+            const u = (await db.ref(`users/${uid}`).once('value')).val();
+            if ((u.wallet_balance||0) < Number(a)) return showToast('Insufficient balance!', true);
+            await db.ref().update({ [`/users/${uid}/wallet_balance`]: (u.wallet_balance||0)-Number(a), [`/transactions/${uid}/${db.ref().child('transactions').push().key}`]: { amount: Number(a), type: 'debit', description: 'Deducted by admin', created_at: new Date().toISOString() } });
+            showToast(`Deducted ${fmt(a)}`); renderUsers(document.getElementById('adminUsersPage'));
+        }
+
+        function logout() { if (confirm('Logout from admin dashboard?')) { auth.signOut(); showToast('Logged out') } }
+    </script>
+</body>
+
+</html>

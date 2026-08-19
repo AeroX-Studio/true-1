@@ -1,0 +1,546 @@
+🌌 Velrix — Complete App UI
+
+Style: Premium Cyber Esports
+Mood: Dark • Futuristic • Competitive • Minimal
+Main colors: #07080D + Electric Violet + Cyber Cyan
+Font: Sora / Inter / Space Grotesk
+
+1. 🚀 Splash Screen
+              ✦
+
+
+          Velrix
+           
+
+
+      TOURNAMENT ARENA
+
+
+    ◉ ◉ ◉  LOADING  ◉ ◉ ◉
+
+Animation: Logo slowly appears → violet/cyan glow → particles → Home screen.
+
+2. 🔐 Login / Sign Up
+Background
+
+Almost-black with a subtle futuristic grid.
+
+        WELCOME BACK
+
+
+      Enter the Arena
+
+
+ ┌──────────────────────────┐
+ │  email     │
+ └──────────────────────────┘
+ ┌──────────────────────────┐
+ │  Password     │
+ └──────────────────────────┘
+
+ ┌──────────────────────────┐
+ │       CONTINUE →         │
+ └──────────────────────────┘
+
+
+          or
+
+
+   
+
+
+   Don't have an account?
+          Sign Up
+
+Keep this screen very clean.
+
+3. 🏠 HOME — Main Screen
+
+This is the most important screen.
+
+┌──────────────────────────────┐
+│  NEON VOID       🔔  ◉       │
+│  Good evening, NEXUS         │
+│                              │
+│ ┌──────────────────────────┐ │
+│ │ 🔴 LIVE NOW              │ │
+│ │                          │ │
+│ │ NIGHT RAID              │ │
+│ │ SQUAD TOURNAMENT         │ │
+│ │                          │ │
+│ │ 🏆 ৳5,000   👥 128/128  │ │
+│ │                          │ │
+│ │       [ JOIN NOW → ]     │ │
+│ └──────────────────────────┘ │
+│                              │
+│  QUICK PLAY                  │
+│                              │
+│  [1V1] [DUO] [SQUAD] [CLAN] │
+│                              │
+│  TRENDING                    │
+│ ┌──────────┐ ┌────────────┐ │
+│ │ NIGHT    │ │ HEADSHOT   │ │
+│ │ WAR      │ │ ONLY       │ │
+│ │ ৳2,000   │ │ ৳1,000     │ │
+│ └──────────┘ └────────────┘ │
+│                              │
+│  UPCOMING →                  │
+│                              │
+│  ⚡ 8:00 PM   Squad          │
+│  ⚡ 9:30 PM   Solo           │
+│                              │
+│ ──────────────────────────── │
+│  ⌂       🏆      ⚡     👑  ◉│
+│ Home   Tournaments Play Rank │
+└──────────────────────────────┘
+4. 🏆 Tournament Screen
+
+Tabs:
+
+LIVE | UPCOMING | COMPLETED
+
+Each tournament card:
+
+┌──────────────────────────────┐
+│ ● LIVE                       │
+│                              │
+│ NIGHT RAID                   │
+│ Squad • Bermuda              │
+│                              │
+│ 🏆 Prize          👥 Players │
+│ ৳5,000            128/128    │
+│                              │
+│ Entry: ৳50                  │
+│                              │
+│ ████████████████  100%      │
+│                              │
+│          JOIN →              │
+└──────────────────────────────┘
+5. 🎮 Tournament Details
+
+When someone taps a tournament:
+
+← NIGHT RAID              ⋮
+
+
+        🏆
+      ৳5,000
+     PRIZE POOL
+
+
+ ┌────────────────────────────┐
+ │ SQUAD        BERMUDA       │
+ │ 128 PLAYERS   4 PER TEAM   │
+ └────────────────────────────┘
+
+
+ STARTS IN
+
+
+       08 : 42 : 17
+
+
+ ─────────────────────────────
+
+
+ PRIZE DISTRIBUTION
+
+
+ #1       ৳2,500
+ #2       ৳1,500
+ #3       ৳1,000
+
+
+ ─────────────────────────────
+
+
+ RULES
+ ✓ No hacks
+ ✓ No teaming
+ ✓ Screenshot required
+ ✓ Room ID revealed before match
+
+
+ ┌────────────────────────────┐
+ │        JOIN TOURNAMENT     │
+ │             ৳50            │
+ └────────────────────────────┘
+6. 🎯 Match Room Screen
+
+After joining:
+
+MATCH READY
+
+
+NIGHT RAID
+SQUAD #024
+
+
+        STARTS IN
+
+
+          04:32
+
+
+ ┌────────────────────────────┐
+ │ ROOM ID                    │
+ │                            │
+ │       84739210             │
+ │                         📋 │
+ └────────────────────────────┘
+
+
+ ┌────────────────────────────┐
+ │ PASSWORD                   │
+ │                            │
+ │       ••••••••          👁 │
+ └────────────────────────────┘
+
+
+        [ COPY DETAILS ]
+
+
+ ⚠️ Room information becomes
+ available 5 minutes before match.
+7. 📸 Result Submission
+
+After the match:
+
+MATCH COMPLETED ✓
+
+
+Upload your result
+
+
+ ┌────────────────────────────┐
+ │                            │
+ │       + ADD SCREENSHOT     │
+ │                            │
+ └────────────────────────────┘
+
+
+ KILLS
+ [  12  ]
+
+
+ PLACEMENT
+ [  3   ]
+
+
+ ┌────────────────────────────┐
+ │       SUBMIT RESULT →      │
+ └────────────────────────────┘
+
+Then:
+
+Result submitted → Under Review → Verified ✓
+
+8. 👑 Rankings
+
+Make this screen feel prestigious.
+
+             LEADERBOARD
+
+
+        THIS MONTH ▼
+
+
+             🥇
+          NEXUS
+       2,840 POINTS
+
+
+     🥈             🥉
+   RAVEN           ZENO
+   2,710           2,590
+
+
+────────────────────────────
+
+
+ #4   SHADOW       2,420
+ #5   RDX          2,390
+ #6   BLAZE        2,310
+ #7   ZERO         2,280
+
+
+────────────────────────────
+
+
+        YOUR RANK
+
+
+           #47
+        1,240 XP
+
+
+      [ VIEW PROFILE ]
+9. 👤 Profile
+← PROFILE
+
+
+             ◉
+           NEXUS
+
+
+        ⚡ LEGEND ⚡
+
+
+        LEVEL 27
+
+
+ ┌────────┐ ┌────────┐ ┌────────┐
+ │   28   │ │  412   │ │   7    │
+ │  WINS  │ │ KILLS  │ │ STREAK │
+ └────────┘ └────────┘ └────────┘
+
+
+ ━━━━━━━━━━━━━━━━━━━
+ XP  2,840 / 3,500
+
+
+ ACHIEVEMENTS
+
+
+ 🏆 Champion
+ 🔥 Kill Machine
+ ⚡ 7 Win Streak
+ 👑 Top 50
+
+
+        [ SHARE PROFILE ]
+10. 💰 Wallet
+
+Make this extremely trustworthy.
+
+              WALLET
+
+
+        AVAILABLE BALANCE
+
+
+            ৳ 2,450
+
+
+ ┌────────────────────────────┐
+ │     + ADD MONEY            │
+ │     WITHDRAW               │
+ └────────────────────────────┘
+
+
+ TRANSACTION HISTORY
+
+
+ + ৳500    Tournament Win
+ - ৳50     Tournament Entry
+ + ৳250    Referral Reward
+ - ৳100    Tournament Entry
+
+
+        [ VIEW ALL ]
+
+Use green only for successful money movements so the financial information is easy to understand.
+
+11. 🎁 Rewards / Referral
+
+This could become one of your biggest growth features.
+
+        INVITE & EARN
+
+
+        YOUR CODE
+
+
+          NEXUS47
+
+
+       [ COPY CODE ]
+
+
+ Invite friends and earn rewards.
+
+
+ ┌────────────────────────────┐
+ │ 3 FRIENDS       ✓           │
+ │ Reward: Free Entry         │
+ └────────────────────────────┘
+
+
+ ┌────────────────────────────┐
+ │ 10 FRIENDS      🔒          │
+ │ Reward: VIP Badge          │
+ └────────────────────────────┘
+
+
+ ┌────────────────────────────┐
+ │ 25 FRIENDS      🔒          │
+ │ Reward: Elite Tournament   │
+ └────────────────────────────┘
+12. 🔔 Notifications
+NOTIFICATIONS
+
+
+TODAY
+
+
+🔥 Tournament starts in 15 min
+   NIGHT RAID • 8:00 PM
+
+
+🏆 Congratulations!
+   You finished #2.
+
+
+💰 Reward credited
+   ৳1,500 added to wallet.
+
+
+YESTERDAY
+
+
+⚡ New tournament available
+   HEADSHOT ONLY
+13. ⚙️ Settings
+
+Keep it simple:
+
+SETTINGS
+
+
+ACCOUNT
+  Personal Information
+  Security
+
+
+GAME
+  Free Fire UID
+  Region
+
+
+APP
+  Notifications
+  Language
+  Dark Mode
+
+
+SUPPORT
+  Help Center
+  Contact Support
+  Report a Problem
+
+
+LEGAL
+  Terms
+  Privacy
+  Tournament Rules
+
+
+           Log Out
+🎨 UI Design Rules
+Background
+
+Don't use pure #000000.
+
+Use:
+
+#07080D
+
+Then use very subtle gradients:
+
+Violet → transparent
+
+and
+
+Cyan → transparent
+
+Cards
+
+Use:
+
+#11131C
+
+with approximately 10–15% transparency.
+
+Border:
+
+1px subtle violet/cyan
+
+Buttons
+
+Primary:
+
+Electric Violet
+
+Secondary:
+
+Transparent + thin cyan border
+
+Use rounded corners around 12–16px, not giant pill buttons everywhere.
+
+✨ Animation System
+
+Keep animations smooth and premium:
+
+Button tap
+→ tiny scale-down
+
+Tournament card
+→ subtle glow on touch
+
+Rank increase
+→ XP animation
+
+Win
+→ particle burst
+
+Loading
+→ rotating neon ring
+
+Page transition
+→ 200–300ms slide/fade
+
+Don't overuse animation. Premium ≠ maximum effects.
+
+🧩 Complete Navigation
+                    APP
+                     │
+       ┌─────────────┴─────────────┐
+       │                           │
+     LOGIN                       HOME
+                                   │
+          ┌────────────┬───────────┼───────────┬──────────┐
+          ↓            ↓           ↓           ↓          ↓
+     Tournaments    Quick Play   Rankings    Wallet    Profile
+          │
+          ↓
+     Tournament
+       Details
+          │
+          ↓
+      Join Match
+          │
+          ↓
+     Room Details
+          │
+          ↓
+       Play
+          │
+          ↓
+    Submit Result
+          │
+          ↓
+      Verified
+          │
+          ↓
+       Rewards
+🔥 The key visual identity
+
+Your app should feel like:
+
+“A professional esports arena”
+
+—not—
+
+“a gambling-style tournament app.”
+
+That distinction is important for trust, branding, and long-term growth.
