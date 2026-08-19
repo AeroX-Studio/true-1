@@ -483,7 +483,6 @@ Keep animations smooth and premium:
 
 Button tap
 → tiny scale-down
-
 Tournament card
 → subtle glow on touch
 
