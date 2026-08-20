@@ -1,4 +1,41 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+// Automatically load environment variables from .env if present (zero-dependency)
+(function loadEnv() {
+  try {
+    const candidates = [
+      path.resolve(__dirname, '..', '.env'),
+      path.resolve(__dirname, '.env'),
+      path.resolve(process.cwd(), '.env')
+    ];
+    for (const envPath of candidates) {
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, 'utf8');
+        const lines = content.split('\n');
+        for (let line of lines) {
+          line = line.trim();
+          if (!line || line.startsWith('#')) continue;
+          const eqIdx = line.indexOf('=');
+          if (eqIdx !== -1) {
+            const key = line.slice(0, eqIdx).trim();
+            let val = line.slice(eqIdx + 1).trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+              val = val.slice(1, -1);
+            }
+            if (!process.env[key]) {
+              process.env[key] = val;
+            }
+          }
+        }
+        break;
+      }
+    }
+  } catch (e) {
+    // Ignore environment file read errors in serverless contexts
+  }
+})();
 
 // Configuration Defaults
 const MIN_DEPOSIT = 10;
@@ -10,6 +47,19 @@ const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'veltrix-tourname
 const FIREBASE_DB_URL = (process.env.FIREBASE_DB_URL || 'https://veltrix-tournament-default-rtdb.asia-southeast1.firebasedatabase.app').replace(/\/$/, '');
 const UDDOKTAPAY_API_KEY = process.env.UDDOKTAPAY_API_KEY || 'mY87vI5fvZyYhApJY2lPDEhoicioBMReUosYpMuk';
 const UDDOKTAPAY_BASE_URL = (process.env.UDDOKTAPAY_BASE_URL || 'https://aerox.paymently.io/api').replace(/\/$/, '');
+
+// OneSignal Configuration Defaults
+const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || '421b1a39-54f8-45bd-84b8-aee27bba64c5';
+const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || 'os_v2_app_iinruoku7bc33bfyv3rhxoteyvkootsciqwuqv5t5xov2w7tgn2mqtvylcsehyqpt47urzyi5i2uc4abejmf6xxh5jh34bmlql5a45y';
+
+function formatOneSignalAuthHeader(apiKey) {
+  if (!apiKey) return '';
+  const trimmed = String(apiKey).trim().replace(/^["']|["']$/g, '');
+  if (/^(Key|Basic|Bearer)\s+/i.test(trimmed)) {
+    return trimmed;
+  }
+  return `Key ${trimmed}`;
+}
 
 function getUddoktaApiUrl(endpoint) {
   let base = (process.env.UDDOKTAPAY_BASE_URL || 'https://aerox.paymently.io/api').replace(/\/+$/, '');
@@ -304,6 +354,9 @@ module.exports = {
   MIN_DEPOSIT,
   UDDOKTAPAY_API_KEY,
   UDDOKTAPAY_BASE_URL,
+  ONESIGNAL_APP_ID,
+  ONESIGNAL_REST_API_KEY,
+  formatOneSignalAuthHeader,
   getUddoktaApiUrl,
   FIREBASE_PROJECT_ID,
   FIREBASE_DB_URL,
