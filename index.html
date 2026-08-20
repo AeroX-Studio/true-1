@@ -15,6 +15,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <!-- Vercel Serverless API integration -->
     <style>
         /* ══════════════════════════════════════════════════════════════
@@ -1761,6 +1763,33 @@
             font-weight: 600
         }
 
+        /* Toggle Switches */
+        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0 }
+        .toggle-switch input { opacity: 0; width: 0; height: 0 }
+        .toggle-slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--bg5); border-radius: 34px; transition: .3s; border: 1px solid var(--border3) }
+        .toggle-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .3s }
+        input:checked + .toggle-slider { background: var(--gradient); border-color: transparent }
+        input:checked + .toggle-slider:before { transform: translateX(20px) }
+
+        /* FAQ Accordion */
+        .faq-item { background: var(--card); border: 1px solid var(--border3); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; transition: all .3s }
+        .faq-question { padding: 14px 16px; font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; align-items: center; cursor: pointer }
+        .faq-question i { transition: transform .3s; color: var(--text4) }
+        .faq-item.open .faq-question i { transform: rotate(180deg); color: var(--violet) }
+        .faq-answer { padding: 0 16px 14px; font-size: 12px; color: var(--text3); line-height: 1.6; display: none }
+        .faq-item.open .faq-answer { display: block; animation: fadeIn .25s ease }
+
+        /* Avatar Picker */
+        .avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 12px 0 }
+        .avatar-opt { width: 48px; height: 48px; border-radius: 50%; background: var(--bg4); border: 2px solid var(--border3); display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; transition: all .25s }
+        .avatar-opt.selected { border-color: var(--violet); background: var(--gradient-subtle); transform: scale(1.1); box-shadow: 0 0 16px var(--violet-glow) }
+
+        /* Referral Progress Bar */
+        .ref-progress-box { background: var(--bg4); border: 1px solid var(--border3); border-radius: var(--radius); padding: 14px; margin-bottom: 16px }
+        .ref-progress-bar { height: 8px; background: var(--bg5); border-radius: 10px; overflow: hidden; margin: 8px 0 }
+        .ref-progress-fill { height: 100%; background: var(--gradient); border-radius: 10px; transition: width .5s ease; box-shadow: 0 0 12px var(--violet-glow) }
+
+
         /* ══════════════════════════════════════════════════════════════
            VERIFY OVERLAY
            ══════════════════════════════════════════════════════════════ */
@@ -2180,6 +2209,15 @@
                 <div><label class="label">Team / Clan Name <span
                             style="font-size:10px;color:var(--text4)">(Optional)</span></label><input type="text"
                         id="join-team" placeholder="Team name (e.g. AeroX Esports)" class="input"></div>
+                <div id="join-pass-container" style="display:none;padding:12px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:var(--radius-sm)">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                        <input type="checkbox" id="join-use-pass" style="width:18px;height:18px;accent-color:var(--violet)">
+                        <div>
+                            <span style="font-size:12px;font-weight:700;color:var(--violet)">🎟️ Use 1 Free Tournament Pass</span>
+                            <p id="join-pass-count-hint" style="font-size:10px;color:var(--text3);margin-top:2px">Available: 0 Passes</p>
+                        </div>
+                    </label>
+                </div>
                 <div class="info-box"
                     style="display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border)">
                     <span style="color:var(--text2);font-weight:600">Entry Fee</span>
@@ -2280,6 +2318,341 @@
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════
+         EDIT PROFILE MODAL
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="editProfileModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-user-edit" style="color:var(--violet)"></i>Edit Profile</div>
+            <form id="editProfileForm" class="space-y">
+                <div>
+                    <label class="label">Choose Avatar Icon</label>
+                    <div class="avatar-grid" id="avatarPickerGrid">
+                        <div class="avatar-opt selected" data-icon="🔥">🔥</div>
+                        <div class="avatar-opt" data-icon="⚡">⚡</div>
+                        <div class="avatar-opt" data-icon="👑">👑</div>
+                        <div class="avatar-opt" data-icon="🎯">🎯</div>
+                        <div class="avatar-opt" data-icon="🛡️">🛡️</div>
+                        <div class="avatar-opt" data-icon="👾">👾</div>
+                        <div class="avatar-opt" data-icon="🐺">🐺</div>
+                        <div class="avatar-opt" data-icon="🦁">🦁</div>
+                        <div class="avatar-opt" data-icon="💎">💎</div>
+                        <div class="avatar-opt" data-icon="🚀">🚀</div>
+                    </div>
+                </div>
+                <div><label class="label">Username *</label><input type="text" id="ep-username" class="input" required></div>
+                <div><label class="label">Phone Number <span style="font-size:10px;color:var(--text4)">(Optional)</span></label><input type="text" id="ep-phone" placeholder="01XXXXXXXXX" class="input"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div><label class="label">Free Fire IGN</label><input type="text" id="ep-ign" placeholder="Player IGN" class="input"></div>
+                    <div><label class="label">Free Fire UID</label><input type="text" id="ep-uid" placeholder="Character UID" class="input"></div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>Save Profile</button>
+                    <button type="button" onclick="toggleModal('editProfileModal',false)" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         RESET PASSWORD MODAL
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="resetPasswordModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-key" style="color:var(--yellow)"></i>Reset Password</div>
+            <div class="space-y">
+                <div class="card" style="padding:16px;background:var(--bg4);border:1px solid var(--border3)">
+                    <p style="font-size:12px;color:var(--text3);line-height:1.6">We will send a secure password reset link to your registered email address:</p>
+                    <p id="reset-pw-email-display" style="font-weight:800;font-size:14px;color:var(--cyan);margin-top:8px;word-break:break-all"></p>
+                </div>
+                <div class="info-box" style="font-size:11px;color:var(--text3)">
+                    <i class="fas fa-info-circle" style="margin-right:6px;color:var(--yellow)"></i>Check your spam/junk folder if you don't receive the email within 2 minutes.
+                </div>
+                <button id="sendResetPwBtn" onclick="triggerPasswordResetEmail()" class="btn btn-primary btn-lg"><i class="fas fa-paper-plane"></i>Send Reset Email</button>
+                <button type="button" onclick="toggleModal('resetPasswordModal',false)" class="btn btn-outline">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FREE FIRE UID MODAL
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="ffUidModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-gamepad" style="color:var(--red)"></i>Free Fire Game Profile</div>
+            <form id="ffUidForm" class="space-y">
+                <div>
+                    <label class="label">In-Game Name (IGN) *</label>
+                    <input type="text" id="ff-ign-input" placeholder="e.g. VELRIX_PRO" class="input" required>
+                </div>
+                <div>
+                    <label class="label">Character UID *</label>
+                    <input type="text" id="ff-uid-input" placeholder="e.g. 1928374650" class="input" required pattern="[0-9]{6,14}" maxlength="14">
+                    <p style="font-size:10px;color:var(--text4);margin-top:4px">Your numeric Free Fire Character ID from your in-game profile.</p>
+                </div>
+                <div class="info-box" style="font-size:11px">
+                    <i class="fas fa-check-circle" style="color:var(--green);margin-right:6px"></i>Saved details will auto-fill whenever you join tournaments!
+                </div>
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>Save Game Info</button>
+                    <button type="button" onclick="toggleModal('ffUidModal',false)" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         REGION SELECTOR MODAL
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="regionModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-globe-asia" style="color:var(--cyan)"></i>Select Server Region</div>
+            <div class="space-y" id="regionOptionsList">
+                <div class="setting-item" onclick="saveSelectedRegion('Bangladesh', '🇧🇩')">
+                    <div class="setting-left"><span style="font-size:20px">🇧🇩</span><span class="setting-label">Bangladesh (BD Server)</span></div>
+                    <i class="fas fa-check-circle region-check" id="reg-bd" style="color:var(--green);display:none"></i>
+                </div>
+                <div class="setting-item" onclick="saveSelectedRegion('India', '🇮🇳')">
+                    <div class="setting-left"><span style="font-size:20px">🇮🇳</span><span class="setting-label">India (IND Server)</span></div>
+                    <i class="fas fa-check-circle region-check" id="reg-in" style="color:var(--green);display:none"></i>
+                </div>
+                <div class="setting-item" onclick="saveSelectedRegion('Pakistan', '🇵🇰')">
+                    <div class="setting-left"><span style="font-size:20px">🇵🇰</span><span class="setting-label">Pakistan (PK Server)</span></div>
+                    <i class="fas fa-check-circle region-check" id="reg-pk" style="color:var(--green);display:none"></i>
+                </div>
+                <div class="setting-item" onclick="saveSelectedRegion('Nepal', '🇳🇵')">
+                    <div class="setting-left"><span style="font-size:20px">🇳🇵</span><span class="setting-label">Nepal (NP Server)</span></div>
+                    <i class="fas fa-check-circle region-check" id="reg-np" style="color:var(--green);display:none"></i>
+                </div>
+                <div class="setting-item" onclick="saveSelectedRegion('Malaysia', '🇲🇾')">
+                    <div class="setting-left"><span style="font-size:20px">🇲🇾</span><span class="setting-label">Malaysia / SEA</span></div>
+                    <i class="fas fa-check-circle region-check" id="reg-my" style="color:var(--green);display:none"></i>
+                </div>
+                <div class="setting-item" onclick="saveSelectedRegion('Global', '🌐')">
+                    <div class="setting-left"><span style="font-size:20px">🌐</span><span class="setting-label">Global / Other</span></div>
+                    <i class="fas fa-check-circle region-check" id="reg-gl" style="color:var(--green);display:none"></i>
+                </div>
+            </div>
+            <button type="button" onclick="toggleModal('regionModal',false)" class="btn btn-outline" style="margin-top:16px">Close</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         NOTIFICATION PREFERENCES MODAL
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="notifSettingsModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-bell" style="color:var(--yellow)"></i>Notification Preferences</div>
+            <div class="space-y">
+                <div class="setting-item" style="cursor:default">
+                    <div><p style="font-weight:700;font-size:13px">Match Start Reminders</p><p style="font-size:11px;color:var(--text4)">Alert 15 mins before match begins</p></div>
+                    <label class="toggle-switch"><input type="checkbox" id="pref-match-remind" checked onchange="saveNotifPref()"><span class="toggle-slider"></span></label>
+                </div>
+                <div class="setting-item" style="cursor:default">
+                    <div><p style="font-weight:700;font-size:13px">Room ID & Password Alerts</p><p style="font-size:11px;color:var(--text4)">Instant notification when lobby is live</p></div>
+                    <label class="toggle-switch"><input type="checkbox" id="pref-room-alert" checked onchange="saveNotifPref()"><span class="toggle-slider"></span></label>
+                </div>
+                <div class="setting-item" style="cursor:default">
+                    <div><p style="font-weight:700;font-size:13px">Referral & Bonus Rewards</p><p style="font-size:11px;color:var(--text4)">Alert when friends join with your code</p></div>
+                    <label class="toggle-switch"><input type="checkbox" id="pref-ref-alert" checked onchange="saveNotifPref()"><span class="toggle-slider"></span></label>
+                </div>
+                <div class="setting-item" style="cursor:default">
+                    <div><p style="font-weight:700;font-size:13px">App Sound Effects</p><p style="font-size:11px;color:var(--text4)">In-app audio cues and feedback</p></div>
+                    <label class="toggle-switch"><input type="checkbox" id="pref-sound" checked onchange="saveNotifPref()"><span class="toggle-slider"></span></label>
+                </div>
+                <button onclick="toggleModal('notifSettingsModal',false);navigateTo('notificationsPage')" class="btn btn-secondary" style="margin-top:10px"><i class="fas fa-history"></i>View Notification History</button>
+                <button type="button" onclick="toggleModal('notifSettingsModal',false)" class="btn btn-outline">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         HELP CENTER MODAL
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="helpCenterModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-question-circle" style="color:var(--cyan)"></i>Help Center & FAQs</div>
+            <div class="space-y" id="faqAccordion">
+                <div class="faq-item open">
+                    <div class="faq-question" onclick="toggleFaq(this)"><span>How do I join a tournament?</span><i class="fas fa-chevron-down"></i></div>
+                    <div class="faq-answer">Go to the <strong>Arena</strong> tab, browse upcoming matches, tap <strong>Join Match</strong>, provide your Free Fire In-Game Name (IGN) and Character UID, and confirm your entry.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)"><span>Where do I get Room ID and Password?</span><i class="fas fa-chevron-down"></i></div>
+                    <div class="faq-answer">When the match status changes to <strong>🔴 LIVE NOW</strong> (usually 10-15 minutes before the schedule), the Room ID & Password will automatically appear on the tournament detail page and inside the Match Room tab.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)"><span>How does the Referral Reward work?</span><i class="fas fa-chevron-down"></i></div>
+                    <div class="faq-answer">Share your unique Referral Code from the <strong>Invite & Earn</strong> page. When friends sign up using your code, every <strong>5 invites</strong> unlocks a <strong>1 Free Tournament Entry Pass 🎟️</strong> + bonus cash rewards!</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)"><span>How to deposit and withdraw money?</span><i class="fas fa-chevron-down"></i></div>
+                    <div class="faq-answer">Deposits are instant via UddoktaPay (bKash, Nagad, Rocket). Withdrawals can be requested from the <strong>Wallet</strong> tab and are processed to your personal mobile number within 1-24 hours.</div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)"><span>What if a match is cancelled?</span><i class="fas fa-chevron-down"></i></div>
+                    <div class="faq-answer">If an official match is cancelled, entry fees are 100% refunded automatically to all joined participants' wallets.</div>
+                </div>
+            </div>
+            <button type="button" onclick="toggleModal('helpCenterModal',false)" class="btn btn-outline" style="margin-top:16px">Close</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CONTACT SUPPORT MODAL
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="contactSupportModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-headset" style="color:var(--green)"></i>Contact Support</div>
+            <div class="space-y">
+                <a href="https://wa.me/8801700000000?text=Hello%20Velrix%20Support" target="_blank" class="card setting-item" style="text-decoration:none;border-color:rgba(34,197,94,0.3)">
+                    <div class="setting-left"><i class="fab fa-whatsapp" style="color:var(--green);font-size:22px"></i><div><p style="font-weight:700;font-size:14px">WhatsApp Support</p><p style="font-size:11px;color:var(--text4)">Instant response • 10 AM - 12 AM</p></div></div>
+                    <i class="fas fa-chevron-right" style="color:var(--text4)"></i>
+                </a>
+                <a href="https://t.me/velrix_esports" target="_blank" class="card setting-item" style="text-decoration:none;border-color:rgba(6,182,212,0.3)">
+                    <div class="setting-left"><i class="fab fa-telegram-plane" style="color:var(--cyan);font-size:22px"></i><div><p style="font-weight:700;font-size:14px">Telegram Channel</p><p style="font-size:11px;color:var(--text4)">Announcements & live match updates</p></div></div>
+                    <i class="fas fa-chevron-right" style="color:var(--text4)"></i>
+                </a>
+                <a href="mailto:support@velrix.com?subject=Velrix%20App%20Support" class="card setting-item" style="text-decoration:none">
+                    <div class="setting-left"><i class="fas fa-envelope" style="color:var(--violet);font-size:20px"></i><div><p style="font-weight:700;font-size:14px">Email Support</p><p style="font-size:11px;color:var(--text4)">support@velrix.com</p></div></div>
+                    <i class="fas fa-chevron-right" style="color:var(--text4)"></i>
+                </a>
+                <button type="button" onclick="toggleModal('contactSupportModal',false)" class="btn btn-outline" style="margin-top:12px">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         REPORT A PROBLEM MODAL
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="reportProblemModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-flag" style="color:var(--red)"></i>Report a Problem</div>
+            <form id="reportProblemForm" class="space-y">
+                <div>
+                    <label class="label">Issue Category *</label>
+                    <select id="rp-category" class="input" required>
+                        <option value="Payment / Deposit">Deposit / Payment Issue</option>
+                        <option value="Withdrawal">Withdrawal Delay</option>
+                        <option value="Match Room ID">Match Room ID / Password Problem</option>
+                        <option value="Player Dispute">Player Dispute / Hacker Report</option>
+                        <option value="App Bug">App Bug / Technical Issue</option>
+                        <option value="Other">Other Query</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="label">Description *</label>
+                    <textarea id="rp-desc" class="textarea" rows="4" placeholder="Please describe the issue in detail with match ID or transaction invoice if applicable..." required></textarea>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-paper-plane"></i>Submit Ticket</button>
+                    <button type="button" onclick="toggleModal('reportProblemModal',false)" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         TERMS, PRIVACY & RULES MODALS
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="termsModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-file-alt" style="color:var(--cyan)"></i>Terms of Service</div>
+            <div style="max-height:60vh;overflow-y:auto;font-size:12px;color:var(--text2);line-height:1.7" class="space-y">
+                <p><strong>1. Acceptance of Terms:</strong> By creating an account on Velrix, you agree to comply with all platform rules, fair play guidelines, and tournament terms.</p>
+                <p><strong>2. Account Security:</strong> You are responsible for maintaining confidentiality of your credentials. Sharing accounts for tournaments is strictly prohibited.</p>
+                <p><strong>3. Fair Play Policy:</strong> Any use of emulators (unless explicitly marked), scripts, game modifiers, or hacks will result in an immediate permanent ban and forfeiture of all prizes.</p>
+                <p><strong>4. Wallet & Payments:</strong> All wallet balances are in Bangladeshi Taka (৳). Users must provide correct mobile wallet details for withdrawals.</p>
+            </div>
+            <button type="button" onclick="toggleModal('termsModal',false)" class="btn btn-outline" style="margin-top:16px">Close</button>
+        </div>
+    </div>
+
+    <div id="privacyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-shield-alt" style="color:var(--green)"></i>Privacy Policy</div>
+            <div style="max-height:60vh;overflow-y:auto;font-size:12px;color:var(--text2);line-height:1.7" class="space-y">
+                <p><strong>1. Data Collection:</strong> We collect only necessary information such as your email, username, and in-game UID to operate esports tournaments.</p>
+                <p><strong>2. Payment Data:</strong> Financial transactions are processed via secure encrypted gateways. We never store credit card or banking PINs.</p>
+                <p><strong>3. Data Security:</strong> Your data is protected using industry-standard Firebase authentication and security rules.</p>
+            </div>
+            <button type="button" onclick="toggleModal('privacyModal',false)" class="btn btn-outline" style="margin-top:16px">Close</button>
+        </div>
+    </div>
+
+    <div id="rulesModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-trophy" style="color:var(--yellow)"></i>Tournament Rules</div>
+            <div style="max-height:60vh;overflow-y:auto;font-size:12px;color:var(--text2);line-height:1.7" class="space-y">
+                <p><strong>1. Joining Lobby:</strong> Players must join the in-game custom room using the exact IGN and Character UID registered on Velrix.</p>
+                <p><strong>2. Timings:</strong> Room ID is shared 10-15 minutes prior to match. The match starts precisely at the scheduled time.</p>
+                <p><strong>3. Result Verification:</strong> Prizes are automatically distributed upon official match result verification by Velrix moderators.</p>
+                <p><strong>4. Zero Tolerance for Cheating:</strong> Teaming with enemies, using hacks, or exploit abuse will lead to instant disqualification.</p>
+            </div>
+            <button type="button" onclick="toggleModal('rulesModal',false)" class="btn btn-outline" style="margin-top:16px">Close</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         LOGOUT CONFIRM MODAL
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="logoutConfirmModal" class="modal-overlay">
+        <div class="modal-content" style="text-align:center">
+            <div class="modal-handle"></div>
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.12);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px"><i class="fas fa-sign-out-alt"></i></div>
+            <h3 style="font-size:18px;font-weight:900;margin-bottom:8px">Log Out from Velrix?</h3>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:20px">Are you sure you want to sign out of your account?</p>
+            <div style="display:flex;gap:10px">
+                <button onclick="confirmLogoutAction()" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i>Yes, Log Out</button>
+                <button type="button" onclick="toggleModal('logoutConfirmModal',false)" class="btn btn-outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SHARE REFERRAL MODAL
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="shareReferralModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-share-alt" style="color:var(--cyan)"></i>Share Invite Link</div>
+            <div class="space-y">
+                <div class="referral-code-box" style="padding:14px">
+                    <p style="font-size:10px;color:var(--text4);text-transform:uppercase;font-weight:700;letter-spacing:1px;margin-bottom:4px">Your Referral Code</p>
+                    <div id="share-modal-code" class="referral-code" style="font-size:24px">VELRIX</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <button onclick="shareViaWhatsApp()" class="btn btn-success" style="background:#25D366"><i class="fab fa-whatsapp"></i>WhatsApp</button>
+                    <button onclick="shareViaTelegram()" class="btn btn-primary" style="background:#0088cc"><i class="fab fa-telegram-plane"></i>Telegram</button>
+                </div>
+                <button onclick="copyInviteLink()" class="btn btn-secondary"><i class="fas fa-link"></i>Copy Full Invite Link</button>
+                <button type="button" onclick="toggleModal('shareReferralModal',false)" class="btn btn-outline">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OneSignal Verification Dialog Modal -->
+    <div id="oneSignalVerificationModal" class="modal-overlay" style="z-index:9999">
+        <div class="modal-content" style="text-align:center;max-width:480px">
+            <div class="modal-handle"></div>
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(6,182,212,0.15);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 0 25px var(--cyan-glow)"><i class="fas fa-bell"></i></div>
+            <h3 style="font-size:18px;font-weight:900;margin-bottom:10px">Your OneSignal SDK integration is complete!</h3>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6">You can now send Push Notifications & In-App Messages through OneSignal. Tap below to enable push notifications.</p>
+            <button type="button" onclick="handleOneSignalGotIt()" class="btn btn-primary btn-lg" style="width:100%"><i class="fas fa-check"></i>Got it</button>
+        </div>
+    </div>
+
     <div id="toast"></div>
 
     <!-- ═══════════════════════════════════════════════════════════════
@@ -2287,6 +2660,98 @@
          ═══════════════════════════════════════════════════════════════ -->
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // ── OneSignal SDK & Median Push Integration ──
+        const ONESIGNAL_APP_ID = "421b1a39-54f8-45bd-84b8-aee27bba64c5";
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        let oneSignalSubscriptionObserver = null;
+        let oneSignalVerificationDialogShown = false;
+
+        function initOneSignalSDK() {
+            // 1. Median.co Native Web-to-APK OneSignal Bridge Check
+            if (window.median && window.median.onesignal) {
+                console.log('[OneSignal] Initializing via Median.co Native OneSignal Bridge');
+                if (typeof window.median.onesignal.info === 'function') {
+                    window.median.onesignal.info(data => {
+                        if (data && (data.userId || data.subscriptionId) && !oneSignalVerificationDialogShown) {
+                            checkAndShowOneSignalVerificationDialog(data.userId || data.subscriptionId, true);
+                        }
+                    });
+                }
+            }
+
+            // 2. OneSignal Official Web SDK
+            OneSignalDeferred.push(async function(OneSignal) {
+                try {
+                    await OneSignal.init({
+                        appId: ONESIGNAL_APP_ID,
+                        allowLocalhostAsSecureOrigin: true,
+                        notifyButton: { enable: false }
+                    });
+                    console.log('[OneSignal] Web SDK Initialized with App ID:', ONESIGNAL_APP_ID);
+
+                    // Retained observer reference
+                    oneSignalSubscriptionObserver = function(event) {
+                        const subId = OneSignal.User?.PushSubscription?.id;
+                        if (subId && typeof subId === 'string' && subId.trim() !== '' && !subId.startsWith('local-')) {
+                            checkAndShowOneSignalVerificationDialog(subId, false);
+                        }
+                    };
+
+                    if (OneSignal.User && OneSignal.User.PushSubscription) {
+                        OneSignal.User.PushSubscription.addEventListener("change", oneSignalSubscriptionObserver);
+                        
+                        // Evaluate immediately at observer-registration time
+                        const currentSubId = OneSignal.User.PushSubscription.id;
+                        if (currentSubId && typeof currentSubId === 'string' && currentSubId.trim() !== '' && !currentSubId.startsWith('local-')) {
+                            checkAndShowOneSignalVerificationDialog(currentSubId, false);
+                        }
+                    }
+                } catch(err) {
+                    console.warn('[OneSignal] Initialization note:', err);
+                }
+            });
+        }
+
+        function checkAndShowOneSignalVerificationDialog(subId, isMedian) {
+            if (oneSignalVerificationDialogShown) return;
+            const key = 'onesignal_verified_' + subId;
+            if (localStorage.getItem(key)) {
+                oneSignalVerificationDialogShown = true;
+                return;
+            }
+            oneSignalVerificationDialogShown = true;
+            localStorage.setItem(key, 'true');
+            showOneSignalVerificationModal();
+        }
+
+        function showOneSignalVerificationModal() {
+            const modal = document.getElementById('oneSignalVerificationModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function handleOneSignalGotIt() {
+            const modal = document.getElementById('oneSignalVerificationModal');
+            if (modal) modal.style.display = 'none';
+            requestOneSignalPushPermission();
+        }
+
+        function requestOneSignalPushPermission() {
+            // Median.co native bridge registration
+            if (window.median && window.median.onesignal && typeof window.median.onesignal.register === 'function') {
+                window.median.onesignal.register();
+                showToast('Push Notifications Enabled! 🔔');
+                return;
+            }
+            // Web SDK
+            if (window.OneSignal) {
+                OneSignal.Notifications.requestPermission().then(granted => {
+                    if (granted) showToast('Push Notifications Enabled! 🔔');
+                }).catch(() => {});
+            }
+        }
+
+        initOneSignalSDK();
 
         // ── Firebase Config ──
         const firebaseConfig = {
@@ -2372,16 +2837,46 @@
             document.getElementById('appHeader').style.display = show ? 'flex' : 'none';
             document.getElementById('bottomNav').style.display = show ? 'block' : 'none';
             if (show) {
+                // OneSignal User Login Sync
+                try {
+                    if (window.OneSignal) {
+                        OneSignal.login(user.uid);
+                    }
+                    if (window.median && window.median.onesignal && window.median.onesignal.externalUserId) {
+                        window.median.onesignal.externalUserId.set({ externalId: user.uid });
+                    }
+                } catch(e) {}
+
                 try { const b = (await db.ref('app_settings/banner').once('value')).val(); banner = b || { title: 'Welcome to Velrix', subtitle: 'Compete. Win. Dominate.', enabled: true } } catch (e) { banner = { title: 'Welcome to Velrix', subtitle: 'Compete. Win. Dominate.', enabled: true } }
                 db.ref('users/' + user.uid).on('value', snap => {
                     U = { uid: user.uid, ...snap.val() };
+                    // Sync tags to OneSignal
+                    try {
+                        if (window.OneSignal && U) {
+                            OneSignal.User.addTags({ role: U.role || 'player', username: U.username || '' });
+                        }
+                        if (window.median && window.median.onesignal && window.median.onesignal.tags && U) {
+                            window.median.onesignal.tags.set({ tags: { role: U.role || 'player', username: U.username || '' } });
+                        }
+                    } catch(e) {}
+
                     const h = document.getElementById('headerWallet');
                     if (h) h.innerHTML = `<i class="fas fa-wallet"></i> ${fmt(U.wallet_balance || 0)}`;
                     const w = document.getElementById('walletBal');
                     if (w) w.textContent = fmt(U.wallet_balance || 0);
                 });
                 navigateTo('homePage');
-            } else { U = null; navigateTo('loginPage') }
+            } else {
+                // OneSignal Logout Sync
+                try {
+                    if (window.OneSignal) OneSignal.logout();
+                    if (window.median && window.median.onesignal && window.median.onesignal.externalUserId) {
+                        window.median.onesignal.externalUserId.delete();
+                    }
+                } catch(e) {}
+                U = null;
+                navigateTo('loginPage');
+            }
         });
 
         function loadPage(pid) {
@@ -2425,7 +2920,12 @@
                     <form id="sForm" class="space-y" style="display:none">
                         <div><label class="label">Username</label><input type="text" id="sUser" placeholder="Choose a username" class="input" required></div>
                         <div><label class="label">Email</label><input type="email" id="sEmail" placeholder="Enter your email" class="input" required></div>
-                        <div><label class="label">Password</label><input type="password" id="sPass" placeholder="Min 6 characters" class="input" required></div>
+                        <div><label class="label">Password</label><input type="password" id="sPass" placeholder="Min 6 characters" class="input" required minlength="6"></div>
+                        <div>
+                            <label class="label">Referral Code <span style="font-size:10px;color:var(--cyan);font-weight:600">(Optional - Earn Rewards)</span></label>
+                            <input type="text" id="sRef" placeholder="e.g. VELRIX88" class="input" style="text-transform:uppercase;letter-spacing:1px">
+                            <p id="ref-hint" style="font-size:11px;color:var(--green);margin-top:4px;display:none"><i class="fas fa-check-circle" style="margin-right:4px"></i>Referral invite code attached!</p>
+                        </div>
                         <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-user-plus"></i>Create Account</button>
                     </form>
                 </div>
@@ -2434,8 +2934,141 @@
             const lT = document.getElementById('lTab'), sT = document.getElementById('sTab'), lF = document.getElementById('lForm'), sF = document.getElementById('sForm');
             lT.onclick = () => { lT.classList.add('active'); sT.classList.remove('active'); lF.style.display = 'block'; sF.style.display = 'none' };
             sT.onclick = () => { sT.classList.add('active'); lT.classList.remove('active'); sF.style.display = 'block'; lF.style.display = 'none' };
-            lF.onsubmit = e => { e.preventDefault(); const b = lF.querySelector('button'); b.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Logging in...'; b.disabled = true; auth.signInWithEmailAndPassword(lF.lEmail.value, lF.lPass.value).catch(err => { showToast(err.message, true); b.innerHTML = '<i class="fas fa-arrow-right"></i>Continue'; b.disabled = false }) };
-            sF.onsubmit = e => { e.preventDefault(); const b = sF.querySelector('button'); b.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Creating...'; b.disabled = true; auth.createUserWithEmailAndPassword(sF.sEmail.value, sF.sPass.value).then(cred => db.ref('users/' + cred.user.uid).set({ username: sF.sUser.value, email: sF.sEmail.value, wallet_balance: 0, role: 'user', created_at: new Date().toISOString() })).catch(err => { showToast(err.message, true); b.innerHTML = '<i class="fas fa-user-plus"></i>Create Account'; b.disabled = false }) };
+
+            // Auto-detect referral code in URL query string (e.g. ?ref=CODE or ?invite=CODE)
+            const urlParams = new URLSearchParams(window.location.search);
+            const refFromUrl = urlParams.get('ref') || urlParams.get('invite');
+            if (refFromUrl) {
+                const sRefEl = document.getElementById('sRef');
+                const refHint = document.getElementById('ref-hint');
+                if (sRefEl) {
+                    sRefEl.value = refFromUrl.trim().toUpperCase();
+                    if (refHint) refHint.style.display = 'block';
+                    sT.click(); // Auto switch to Sign Up tab
+                }
+            }
+
+            lF.onsubmit = e => {
+                e.preventDefault();
+                const b = lF.querySelector('button');
+                b.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Logging in...';
+                b.disabled = true;
+                auth.signInWithEmailAndPassword(lF.lEmail.value.trim(), lF.lPass.value).catch(err => {
+                    showToast(err.message, true);
+                    b.innerHTML = '<i class="fas fa-arrow-right"></i>Continue';
+                    b.disabled = false;
+                });
+            };
+
+            sF.onsubmit = async e => {
+                e.preventDefault();
+                const b = sF.querySelector('button');
+                b.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Creating Account...';
+                b.disabled = true;
+                try {
+                    const uname = sF.sUser.value.trim();
+                    const email = sF.sEmail.value.trim();
+                    const pass = sF.sPass.value;
+                    const refInput = (document.getElementById('sRef')?.value || '').trim().toUpperCase();
+
+                    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                    const newUid = cred.user.uid;
+
+                    // Generate unique referral code for this user
+                    const cleanPrefix = uname.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5) || 'VELR';
+                    const myRefCode = cleanPrefix + newUid.slice(-3).toUpperCase();
+
+                    let referredBy = null;
+                    let refCodeUsed = null;
+
+                    if (refInput) {
+                        // Look up referrer in /referral_codes or query users
+                        let referrerUid = (await db.ref('referral_codes/' + refInput).once('value')).val();
+                        if (!referrerUid) {
+                            const matchSnap = await db.ref('users').orderByChild('referral_code').equalTo(refInput).once('value');
+                            if (matchSnap.exists()) {
+                                referrerUid = Object.keys(matchSnap.val())[0];
+                            }
+                        }
+
+                        if (referrerUid && referrerUid !== newUid) {
+                            referredBy = referrerUid;
+                            refCodeUsed = refInput;
+
+                            // Save invite under referrer
+                            await db.ref(`referrals/${referrerUid}/invites/${newUid}`).set({
+                                username: uname,
+                                email: email,
+                                joined_at: new Date().toISOString(),
+                                status: 'Active'
+                            });
+
+                            // Read referrer profile and update invite count + rewards
+                            const refSnap = await db.ref('users/' + referrerUid).once('value');
+                            if (refSnap.exists()) {
+                                const rData = refSnap.val();
+                                const newCount = (rData.referral_count || 0) + 1;
+                                let freePasses = rData.free_passes || 0;
+
+                                // Check milestone rule from app_settings
+                                const plansSnap = await db.ref('app_settings/referral_plans').once('value');
+                                const plans = plansSnap.val() || { enabled: true, default_invite_milestone: 5 };
+                                const milestone = Number(plans.default_invite_milestone) || 5;
+
+                                let awardedPass = false;
+                                if (newCount % milestone === 0) {
+                                    freePasses += 1;
+                                    awardedPass = true;
+                                }
+
+                                await db.ref('users/' + referrerUid).update({
+                                    referral_count: newCount,
+                                    free_passes: freePasses
+                                });
+
+                                if (awardedPass) {
+                                    const txnId = 'REF_' + Date.now();
+                                    await db.ref(`transactions/${referrerUid}/${txnId}`).set({
+                                        id: txnId,
+                                        type: 'credit',
+                                        amount: 0,
+                                        description: `Referral Milestone Reached (${newCount} friends)! 🎟️ Awarded 1 Free Tournament Pass`,
+                                        status: 'completed',
+                                        created_at: new Date().toISOString()
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    // Save new user profile
+                    const newUserObj = {
+                        username: uname,
+                        email: email,
+                        wallet_balance: 0,
+                        free_passes: 0,
+                        role: 'user',
+                        referral_code: myRefCode,
+                        referral_count: 0,
+                        avatar_icon: '🔥',
+                        region: 'Bangladesh',
+                        created_at: new Date().toISOString()
+                    };
+                    if (referredBy) {
+                        newUserObj.referred_by = referredBy;
+                        newUserObj.referral_code_used = refCodeUsed;
+                    }
+
+                    await db.ref('users/' + newUid).set(newUserObj);
+                    await db.ref('referral_codes/' + myRefCode).set(newUid);
+
+                    showToast('🎉 Welcome to Velrix, ' + uname + '!');
+                } catch (err) {
+                    showToast(err.message, true);
+                    b.innerHTML = '<i class="fas fa-user-plus"></i>Create Account';
+                    b.disabled = false;
+                }
+            };
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -3059,41 +3692,128 @@
         // ══════════════════════════════════════════════════════════════
         // REWARDS / REFERRAL
         // ══════════════════════════════════════════════════════════════
-        function rRewards(c) {
-            const code = U?.username ? U.username.toUpperCase().slice(0, 5) + Math.floor(Math.random() * 99) : 'VELRIX01';
+        async function rRewards(c) {
+            const code = U?.referral_code || (U?.username ? U.username.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5) + (U.uid ? U.uid.slice(-3).toUpperCase() : '01') : 'VELRIX01');
+            const myCount = Number(U?.referral_count || 0);
+            const myPasses = Number(U?.free_passes || 0);
+
+            // Fetch app referral plan settings
+            let plans = { enabled: true, default_invite_milestone: 5, default_reward_type: 'free_pass', default_reward_label: '1 Free Tournament Entry', tiers: [] };
+            try {
+                const snap = await db.ref('app_settings/referral_plans').once('value');
+                if (snap.exists()) plans = snap.val();
+            } catch (e) { }
+
+            const milestone = Number(plans.default_invite_milestone) || 5;
+            const currentMilestoneProgress = myCount % milestone;
+            const progressPercent = Math.min(100, Math.round((currentMilestoneProgress / milestone) * 100));
+            const remainingForNext = milestone - currentMilestoneProgress;
+
+            // Fetch invites list
+            let invitesList = [];
+            try {
+                const invSnap = await db.ref(`referrals/${U?.uid}/invites`).limitToLast(20).once('value');
+                if (invSnap.exists()) {
+                    invitesList = Object.entries(invSnap.val()).map(([k, v]) => ({ id: k, ...v }));
+                    invitesList.sort((a, b) => new Date(b.joined_at) - new Date(a.joined_at));
+                }
+            } catch (e) { }
+
+            // Dynamic tiers or fallback tiers
+            const tiers = plans.tiers && plans.tiers.length > 0 ? plans.tiers : [
+                { invites: 3, reward: '1 Free Tournament Pass 🎟️', icon: '🎟️' },
+                { invites: 5, reward: 'Free Pass + ৳50 Bonus 💰', icon: '👑' },
+                { invites: 10, reward: 'VIP Elite Tournament Pass ⚡', icon: '⚡' },
+                { invites: 25, reward: 'Master Partner Badge & ৳250 💎', icon: '💎' }
+            ];
+
             c.innerHTML = `
             <div style="padding:20px" class="fade-in">
                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
                     <button onclick="navigateTo('profilePage')" class="btn btn-ghost btn-sm" style="width:auto;padding:8px 12px;color:var(--text3)"><i class="fas fa-arrow-left"></i></button>
                     <div class="section-title" style="margin-bottom:0"><i class="fas fa-gift" style="color:var(--violet)"></i>Invite & Earn</div>
                 </div>
-                <!-- Referral Code -->
-                <div class="card fade-up stagger-1" style="text-align:center;margin-bottom:20px;border:1px solid var(--border);padding:28px">
-                    <p style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-weight:700">Your Referral Code</p>
+
+                <!-- Referral Code Card -->
+                <div class="card fade-up stagger-1" style="text-align:center;margin-bottom:20px;border:1px solid var(--border);padding:24px">
+                    <p style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-weight:700">Your Exclusive Referral Code</p>
                     <div class="referral-code-box" style="margin-bottom:16px">
                         <div class="referral-code">${code}</div>
                     </div>
-                    <button onclick="copyText('${code}')" class="btn btn-primary btn-sm" style="width:auto;margin:0 auto"><i class="fas fa-copy"></i>Copy Code</button>
-                    <p style="font-size:12px;color:var(--text3);margin-top:14px;line-height:1.6">Invite friends and earn rewards for every friend that joins!</p>
+                    <div style="display:flex;gap:10px;justify-content:center">
+                        <button onclick="copyText('${code}')" class="btn btn-primary btn-sm" style="width:auto"><i class="fas fa-copy"></i>Copy Code</button>
+                        <button onclick="openShareReferralModal('${code}')" class="btn btn-secondary btn-sm" style="width:auto"><i class="fas fa-share-alt"></i>Share Link</button>
+                    </div>
+                    <p style="font-size:12px;color:var(--text3);margin-top:14px;line-height:1.6">Share your code with friends! Every <strong>${milestone} invites</strong> awards <strong>1 Free Tournament Entry 🎟️</strong>.</p>
                 </div>
+
+                <!-- Live Stat Cards -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px" class="fade-up stagger-2">
+                    <div class="card" style="padding:16px;text-align:center;background:var(--bg4);border:1px solid var(--border3)">
+                        <p style="font-size:11px;color:var(--text4);font-weight:700;text-transform:uppercase">Friends Invited</p>
+                        <h3 style="font-size:24px;font-weight:900;color:var(--cyan);margin-top:4px">${myCount}</h3>
+                        <p style="font-size:10px;color:var(--text3);margin-top:2px">Total registrations</p>
+                    </div>
+                    <div class="card" style="padding:16px;text-align:center;background:var(--bg4);border:1px solid var(--border3)">
+                        <p style="font-size:11px;color:var(--text4);font-weight:700;text-transform:uppercase">Free Passes</p>
+                        <h3 style="font-size:24px;font-weight:900;color:var(--green);margin-top:4px">🎟️ ${myPasses}</h3>
+                        <p style="font-size:10px;color:var(--text3);margin-top:2px">Available to use</p>
+                    </div>
+                </div>
+
+                <!-- Milestone Progress Bar -->
+                <div class="ref-progress-box fade-up stagger-3">
+                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700">
+                        <span><i class="fas fa-bullseye" style="color:var(--yellow);margin-right:6px"></i>Next Milestone</span>
+                        <span style="color:var(--violet)">${currentMilestoneProgress} / ${milestone} Friends</span>
+                    </div>
+                    <div class="ref-progress-bar">
+                        <div class="ref-progress-fill" style="width:${progressPercent}%"></div>
+                    </div>
+                    <p style="font-size:11px;color:var(--text3);margin-top:4px">${remainingForNext === 0 ? '🎉 Milestone reached! Reward applied!' : `Invite <strong>${remainingForNext} more friends</strong> to unlock next Free Tournament Pass!`}</p>
+                </div>
+
                 <!-- Reward Tiers -->
-                <div class="section-title fade-up stagger-2" style="font-size:16px"><i class="fas fa-star" style="color:var(--yellow)"></i>Reward Tiers</div>
-                <div class="reward-tier fade-up stagger-3">
-                    <div class="reward-icon" style="background:var(--green-glow);color:var(--green)">🎟️</div>
-                    <div style="flex:1"><p style="font-weight:700;font-size:14px">3 Friends</p><p style="font-size:11px;color:var(--text3)">Reward: Free Tournament Entry</p></div>
-                    <span style="font-size:16px">🔒</span>
+                <div class="section-title fade-up stagger-4" style="font-size:16px;margin-top:24px"><i class="fas fa-trophy" style="color:var(--yellow)"></i>Reward Plans & Tiers</div>
+                <div class="space-y fade-up stagger-5">
+                    ${tiers.map((t, idx) => {
+                        const isUnlocked = myCount >= Number(t.invites);
+                        return `
+                        <div class="reward-tier ${isUnlocked ? 'unlocked' : ''}">
+                            <div class="reward-icon" style="background:${isUnlocked ? 'var(--green-glow)' : 'var(--bg4)'};color:${isUnlocked ? 'var(--green)' : 'var(--text3)'}">${t.icon || '🎁'}</div>
+                            <div style="flex:1">
+                                <p style="font-weight:700;font-size:13px">${t.invites} Friends Invited</p>
+                                <p style="font-size:11px;color:var(--text3)">${t.reward}</p>
+                            </div>
+                            <span style="font-size:14px;font-weight:700;color:${isUnlocked ? 'var(--green)' : 'var(--text4)'}">${isUnlocked ? '✅ Unlocked' : `🔒 ${myCount}/${t.invites}`}</span>
+                        </div>`;
+                    }).join('')}
                 </div>
-                <div class="reward-tier fade-up stagger-4">
-                    <div class="reward-icon" style="background:var(--violet-glow2);color:var(--violet)">👑</div>
-                    <div style="flex:1"><p style="font-weight:700;font-size:14px">10 Friends</p><p style="font-size:11px;color:var(--text3)">Reward: VIP Badge</p></div>
-                    <span style="font-size:16px">🔒</span>
+
+                <!-- Invited Friends List -->
+                <div class="section-title fade-up stagger-6" style="font-size:16px;margin-top:24px"><i class="fas fa-users" style="color:var(--cyan)"></i>Friends Who Joined (${invitesList.length})</div>
+                <div class="space-y fade-up stagger-6">
+                    ${invitesList.length === 0 ? `
+                        <div class="card" style="padding:20px;text-align:center;background:var(--bg4);border:1px solid var(--border3)">
+                            <div style="font-size:28px;margin-bottom:8px">👥</div>
+                            <p style="font-size:13px;font-weight:700;color:var(--text2)">No friends invited yet</p>
+                            <p style="font-size:11px;color:var(--text4);margin-top:4px">Share your referral link on WhatsApp or Telegram to start earning rewards!</p>
+                        </div>
+                    ` : invitesList.map(inv => `
+                        <div class="setting-item" style="cursor:default">
+                            <div class="setting-left">
+                                <div style="width:36px;height:36px;border-radius:50%;background:var(--gradient-subtle);border:1px solid var(--violet);display:flex;align-items:center;justify-content:center;font-size:16px">🔥</div>
+                                <div>
+                                    <p style="font-weight:700;font-size:13px">${inv.username || 'Friend'}</p>
+                                    <p style="font-size:10px;color:var(--text4)">Joined ${timeAgo(inv.joined_at)}</p>
+                                </div>
+                            </div>
+                            <span class="badge" style="background:var(--green-glow);color:var(--green);font-size:10px"><i class="fas fa-check-circle" style="margin-right:4px"></i>Active</span>
+                        </div>
+                    `).join('')}
                 </div>
-                <div class="reward-tier fade-up stagger-5">
-                    <div class="reward-icon" style="background:var(--cyan-glow2);color:var(--cyan)">⚡</div>
-                    <div style="flex:1"><p style="font-weight:700;font-size:14px">25 Friends</p><p style="font-size:11px;color:var(--text3)">Reward: Elite Tournament Access</p></div>
-                    <span style="font-size:16px">🔒</span>
-                </div>
-                <button onclick="if(navigator.share)navigator.share({title:'Join Velrix',text:'Use my code: ${code}',url:window.location.href}).catch(()=>{});else copyText('Join Velrix! Use code: ${code}')" class="btn btn-primary btn-lg" style="margin-top:20px"><i class="fas fa-share-alt"></i>Share Invite Link</button>
+
+                <button onclick="openShareReferralModal('${code}')" class="btn btn-primary btn-lg" style="margin-top:24px"><i class="fas fa-share-alt"></i>Invite Friends Now</button>
             </div>`;
         }
 
@@ -3127,84 +3847,159 @@
         // SETTINGS
         // ══════════════════════════════════════════════════════════════
         function rSettings(c) {
-            c.innerHTML = `<div style="padding:20px">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px" class="fade-in">
+            const avatar = U?.avatar_icon || '🔥';
+            const ffUid = U?.game_uid || 'Not set';
+            const region = U?.region || 'Bangladesh';
+            const passes = Number(U?.free_passes || 0);
+            const roleBadge = U?.role === 'admin' ? '<span class="badge badge-live" style="margin-left:6px">👑 Admin</span>' : U?.role === 'moderator' ? '<span class="badge" style="background:var(--cyan-glow);color:var(--cyan);margin-left:6px">🛡️ Mod</span>' : '';
+
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
                 <button onclick="navigateTo('profilePage')" class="btn btn-ghost btn-sm" style="width:auto;padding:8px 12px;color:var(--text3)"><i class="fas fa-arrow-left"></i></button>
                 <div class="section-title" style="margin-bottom:0">Settings</div>
             </div>
+
+            <!-- ACCOUNT SECTION -->
             <div class="setting-group fade-up stagger-1">
                 <div class="setting-group-title">Account</div>
-                <div class="setting-item">
-                    <div class="setting-left"><i class="fas fa-user"></i><div><span class="setting-label">${U?.username || 'User'}</span><p style="font-size:11px;color:var(--text4);margin-top:2px">${U?.email || ''}</p></div></div>
+                <div class="card setting-item" onclick="openEditProfileModal()" style="border-color:var(--violet-glow)">
+                    <div class="setting-left">
+                        <div style="width:44px;height:44px;border-radius:50%;background:var(--gradient-subtle);border:2px solid var(--violet);display:flex;align-items:center;justify-content:center;font-size:22px">${avatar}</div>
+                        <div>
+                            <div style="display:flex;align-items:center"><span class="setting-label">${U?.username || 'User'}</span>${roleBadge}</div>
+                            <p style="font-size:11px;color:var(--text4);margin-top:2px">${U?.email || ''}</p>
+                            <div style="display:flex;gap:6px;margin-top:4px">
+                                <span class="badge" style="background:var(--violet-glow);color:var(--violet);font-size:10px">🎟️ ${passes} Free Passes</span>
+                            </div>
+                        </div>
+                    </div>
+                    <i class="fas fa-pencil-alt" style="color:var(--violet);font-size:13px"></i>
                 </div>
-                <div class="setting-item" onclick="doResetPw()">
-                    <div class="setting-left"><i class="fas fa-key"></i><span class="setting-label">Reset Password</span></div>
+                <div class="setting-item" onclick="openResetPwModal()">
+                    <div class="setting-left"><i class="fas fa-key" style="color:var(--yellow)"></i><span class="setting-label">Reset Password</span></div>
                     <i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i>
                 </div>
             </div>
+
+            <!-- GAME SECTION -->
             <div class="setting-group fade-up stagger-2">
                 <div class="setting-group-title">Game</div>
-                <div class="setting-item">
-                    <div class="setting-left"><i class="fas fa-gamepad"></i><span class="setting-label">Free Fire UID</span></div>
+                <div class="setting-item" onclick="openFfUidModal()">
+                    <div class="setting-left"><i class="fas fa-gamepad" style="color:var(--red)"></i><div><span class="setting-label">Free Fire UID</span><p style="font-size:10px;color:var(--text4);margin-top:2px">${U?.game_name ? U.game_name + ' • ' : ''}${ffUid}</p></div></div>
                     <i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i>
                 </div>
-                <div class="setting-item">
-                    <div class="setting-left"><i class="fas fa-globe-asia"></i><span class="setting-label">Region</span></div>
-                    <span style="font-size:12px;color:var(--text3);font-weight:600">Bangladesh</span>
+                <div class="setting-item" onclick="openRegionModal()">
+                    <div class="setting-left"><i class="fas fa-globe-asia" style="color:var(--cyan)"></i><span class="setting-label">Region</span></div>
+                    <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;color:var(--text2);font-weight:700">${region}</span><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
                 </div>
             </div>
+
+            <!-- APP SECTION -->
             <div class="setting-group fade-up stagger-3">
                 <div class="setting-group-title">App</div>
-                <div class="setting-item" onclick="navigateTo('notificationsPage')">
-                    <div class="setting-left"><i class="fas fa-bell"></i><span class="setting-label">Notifications</span></div>
+                <div class="setting-item" onclick="openNotifSettingsModal()">
+                    <div class="setting-left"><i class="fas fa-bell" style="color:var(--yellow)"></i><span class="setting-label">Notifications</span></div>
                     <i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i>
                 </div>
             </div>
+
+            <!-- SUPPORT SECTION -->
             <div class="setting-group fade-up stagger-4">
                 <div class="setting-group-title">Support</div>
-                <div class="setting-item"><div class="setting-left"><i class="fas fa-question-circle"></i><span class="setting-label">Help Center</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
-                <div class="setting-item"><div class="setting-left"><i class="fas fa-headset"></i><span class="setting-label">Contact Support</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
-                <div class="setting-item"><div class="setting-left"><i class="fas fa-flag"></i><span class="setting-label">Report a Problem</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
+                <div class="setting-item" onclick="openHelpCenterModal()"><div class="setting-left"><i class="fas fa-question-circle" style="color:var(--cyan)"></i><span class="setting-label">Help Center & FAQ</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
+                <div class="setting-item" onclick="openContactSupportModal()"><div class="setting-left"><i class="fas fa-headset" style="color:var(--green)"></i><span class="setting-label">Contact Support</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
+                <div class="setting-item" onclick="openReportProblemModal()"><div class="setting-left"><i class="fas fa-flag" style="color:var(--red)"></i><span class="setting-label">Report a Problem</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
             </div>
+
+            <!-- LEGAL SECTION -->
             <div class="setting-group fade-up stagger-5">
                 <div class="setting-group-title">Legal</div>
-                <div class="setting-item"><div class="setting-left"><i class="fas fa-file-alt"></i><span class="setting-label">Terms of Service</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
-                <div class="setting-item"><div class="setting-left"><i class="fas fa-shield-alt"></i><span class="setting-label">Privacy Policy</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
-                <div class="setting-item"><div class="setting-left"><i class="fas fa-trophy"></i><span class="setting-label">Tournament Rules</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
+                <div class="setting-item" onclick="openTermsModal()"><div class="setting-left"><i class="fas fa-file-alt" style="color:var(--cyan)"></i><span class="setting-label">Terms of Service</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
+                <div class="setting-item" onclick="openPrivacyModal()"><div class="setting-left"><i class="fas fa-shield-alt" style="color:var(--green)"></i><span class="setting-label">Privacy Policy</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
+                <div class="setting-item" onclick="openRulesModal()"><div class="setting-left"><i class="fas fa-trophy" style="color:var(--yellow)"></i><span class="setting-label">Tournament Rules</span></div><i class="fas fa-chevron-right" style="color:var(--text4);font-size:12px"></i></div>
             </div>
-            <button onclick="doLogout()" class="btn btn-danger fade-up stagger-6" style="margin-top:8px"><i class="fas fa-sign-out-alt"></i>Log Out</button>
-            <div class="watermark" style="margin-top:16px">Velrix v2.0 — Made by <span>AeroX Studio</span></div>
+
+            <!-- STAFF PANELS (IF MODERATOR OR ADMIN) -->
+            ${(U?.role === 'admin' || U?.role === 'moderator') ? `
+            <div class="setting-group fade-up stagger-6">
+                <div class="setting-group-title">Staff Portal</div>
+                ${U.role === 'admin' ? `
+                <a href="admin.html" class="setting-item" style="text-decoration:none;border-color:rgba(139,92,246,0.4)">
+                    <div class="setting-left"><i class="fas fa-shield-alt" style="color:var(--violet)"></i><span class="setting-label" style="color:var(--violet);font-weight:700">Admin Control Center</span></div>
+                    <i class="fas fa-external-link-alt" style="color:var(--violet);font-size:12px"></i>
+                </a>` : ''}
+                <a href="mod.html" class="setting-item" style="text-decoration:none;border-color:rgba(6,182,212,0.4)">
+                    <div class="setting-left"><i class="fas fa-user-shield" style="color:var(--cyan)"></i><span class="setting-label" style="color:var(--cyan);font-weight:700">Moderator Dashboard</span></div>
+                    <i class="fas fa-external-link-alt" style="color:var(--cyan);font-size:12px"></i>
+                </a>
+            </div>` : ''}
+
+            <button onclick="openLogoutConfirmModal()" class="btn btn-danger fade-up stagger-6" style="margin-top:8px"><i class="fas fa-sign-out-alt"></i>Log Out</button>
+            <div class="watermark" style="margin-top:16px">Velrix Esports v2.0 — Made by <span>AeroX Studio</span></div>
             </div>`;
         }
 
         // ══════════════════════════════════════════════════════════════
-        // ACTIONS
+        // ACTIONS & MODAL CONTROLLERS
         // ══════════════════════════════════════════════════════════════
         function openJoin(tid, fee) {
             detailTid = tid;
             document.getElementById('join-tid').value = tid;
             document.getElementById('join-fee').value = fee;
-            document.getElementById('join-fee-display').textContent = fee === 0 ? 'FREE' : fmt(fee);
             document.getElementById('joinForm').reset();
             document.getElementById('join-tid').value = tid;
             document.getElementById('join-fee').value = fee;
+
+            // Auto-fill saved Free Fire IGN & UID if present
+            if (U?.game_name) document.getElementById('join-gname').value = U.game_name;
+            if (U?.game_uid) document.getElementById('join-guid').value = U.game_uid;
+
+            // Check if user has Free Passes
+            const passCont = document.getElementById('join-pass-container');
+            const passCheck = document.getElementById('join-use-pass');
+            const passHint = document.getElementById('join-pass-count-hint');
+            const feeDisplay = document.getElementById('join-fee-display');
+
+            const myPasses = Number(U?.free_passes || 0);
+
+            if (fee > 0 && myPasses > 0) {
+                passCont.style.display = 'block';
+                passHint.textContent = `Available: ${myPasses} Passes`;
+                passCheck.checked = false;
+                feeDisplay.textContent = fmt(fee);
+
+                passCheck.onchange = () => {
+                    if (passCheck.checked) {
+                        feeDisplay.innerHTML = '<span style="color:var(--green)">FREE (🎟️ 1 Pass)</span>';
+                    } else {
+                        feeDisplay.textContent = fmt(fee);
+                    }
+                };
+            } else {
+                passCont.style.display = 'none';
+                feeDisplay.textContent = fee === 0 ? 'FREE' : fmt(fee);
+            }
+
             toggleModal('joinModal', true);
         }
 
         async function joinTournament(e) {
             e.preventDefault();
             const tid = document.getElementById('join-tid').value;
-            const fee = Math.max(0, Number(document.getElementById('join-fee').value) || 0);
+            const originalFee = Math.max(0, Number(document.getElementById('join-fee').value) || 0);
             const gn = document.getElementById('join-gname').value.trim();
             const gu = document.getElementById('join-guid').value.trim();
             const tm = (document.getElementById('join-team')?.value || '').trim();
+            const usePass = document.getElementById('join-use-pass')?.checked && (Number(U?.free_passes || 0) > 0);
 
             if (!auth.currentUser) return showToast('Login required!', true);
             if (!tid) return showToast('Invalid tournament!', true);
             if (!gn || !gu) return showToast('Please enter both IGN and Character UID!', true);
 
             const userBal = Number(U?.wallet_balance || 0);
-            if (userBal < fee) return showToast(`Insufficient balance! You need ${fmt(fee)} to join.`, true);
+            const actualFee = usePass ? 0 : originalFee;
+
+            if (!usePass && userBal < actualFee) return showToast(`Insufficient balance! You need ${fmt(actualFee)} to join.`, true);
 
             const uid = auth.currentUser.uid;
             const userPartSnap = await db.ref(`participants/${tid}/${uid}`).once('value');
@@ -3215,36 +4010,68 @@
             b.disabled = true;
 
             try {
-                const newBal = userBal - fee;
                 const pushKey = db.ref(`transactions/${uid}`).push().key;
                 const updates = {};
-                updates[`/users/${uid}/wallet_balance`] = newBal;
-                updates[`/participants/${tid}/${uid}`] = {
-                    status: 'Participated',
-                    game_name: gn,
-                    game_uid: gu,
-                    team_name: tm,
-                    username: U?.username || 'Player',
-                    joined_at: new Date().toISOString()
-                };
-                updates[`/transactions/${uid}/${pushKey}`] = {
-                    amount: fee,
-                    type: 'debit',
-                    description: 'Tournament Entry Fee',
-                    tournament_id: tid,
-                    created_at: new Date().toISOString()
-                };
+
+                if (usePass) {
+                    const newPasses = Math.max(0, (Number(U?.free_passes || 0) - 1));
+                    updates[`/users/${uid}/free_passes`] = newPasses;
+                    if (U) U.free_passes = newPasses;
+                    updates[`/participants/${tid}/${uid}`] = {
+                        status: 'Participated',
+                        payment_method: 'free_pass',
+                        fee_paid: 0,
+                        game_name: gn,
+                        game_uid: gu,
+                        team_name: tm,
+                        username: U?.username || 'Player',
+                        joined_at: new Date().toISOString()
+                    };
+                    updates[`/transactions/${uid}/${pushKey}`] = {
+                        amount: 0,
+                        type: 'debit',
+                        description: 'Tournament Entry (🎟️ 1 Free Pass Used)',
+                        tournament_id: tid,
+                        created_at: new Date().toISOString()
+                    };
+                } else {
+                    const newBal = userBal - actualFee;
+                    updates[`/users/${uid}/wallet_balance`] = newBal;
+                    if (U) U.wallet_balance = newBal;
+                    updates[`/participants/${tid}/${uid}`] = {
+                        status: 'Participated',
+                        payment_method: 'wallet',
+                        fee_paid: actualFee,
+                        game_name: gn,
+                        game_uid: gu,
+                        team_name: tm,
+                        username: U?.username || 'Player',
+                        joined_at: new Date().toISOString()
+                    };
+                    updates[`/transactions/${uid}/${pushKey}`] = {
+                        amount: actualFee,
+                        type: 'debit',
+                        description: 'Tournament Entry Fee',
+                        tournament_id: tid,
+                        created_at: new Date().toISOString()
+                    };
+                }
+
+                // Also save game_name and game_uid to user profile if not set
+                if (!U?.game_name || !U?.game_uid) {
+                    updates[`/users/${uid}/game_name`] = gn;
+                    updates[`/users/${uid}/game_uid`] = gu;
+                    if (U) { U.game_name = gn; U.game_uid = gu; }
+                }
 
                 await db.ref().update(updates);
 
-                // Update local U cache immediately
-                if (U) U.wallet_balance = newBal;
                 const h = document.getElementById('headerWallet');
-                if (h) h.innerHTML = `<i class="fas fa-wallet"></i> ${fmt(newBal)}`;
+                if (h) h.innerHTML = `<i class="fas fa-wallet"></i> ${fmt(U.wallet_balance || 0)}`;
                 const w = document.getElementById('walletBal');
-                if (w) w.textContent = fmt(newBal);
+                if (w) w.textContent = fmt(U.wallet_balance || 0);
 
-                showToast('Registration Confirmed! 🎉');
+                showToast(usePass ? '🎉 Joined using 1 Free Tournament Pass!' : 'Registration Confirmed! 🎉');
                 toggleModal('joinModal', false);
                 detailTid = tid;
                 navigateTo('tournamentDetailPage');
@@ -3255,6 +4082,265 @@
                 b.innerHTML = '<i class="fas fa-check-circle"></i>Confirm & Join';
                 b.disabled = false;
             }
+        }
+
+        // ── EDIT PROFILE MODAL ──
+        function openEditProfileModal() {
+            if (!U) return;
+            document.getElementById('ep-username').value = U.username || '';
+            document.getElementById('ep-phone').value = U.phone || '';
+            document.getElementById('ep-ign').value = U.game_name || '';
+            document.getElementById('ep-uid').value = U.game_uid || '';
+
+            const currentIcon = U.avatar_icon || '🔥';
+            document.querySelectorAll('#avatarPickerGrid .avatar-opt').forEach(opt => {
+                if (opt.dataset.icon === currentIcon) {
+                    opt.classList.add('selected');
+                } else {
+                    opt.classList.remove('selected');
+                }
+            });
+
+            toggleModal('editProfileModal', true);
+        }
+
+        let selectedAvatarIcon = '🔥';
+        document.addEventListener('click', e => {
+            const avatarOpt = e.target.closest('.avatar-opt');
+            if (avatarOpt) {
+                document.querySelectorAll('#avatarPickerGrid .avatar-opt').forEach(el => el.classList.remove('selected'));
+                avatarOpt.classList.add('selected');
+                selectedAvatarIcon = avatarOpt.dataset.icon || '🔥';
+            }
+        });
+
+        document.getElementById('editProfileForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            if (!U) return;
+            const newUname = document.getElementById('ep-username').value.trim();
+            const newPhone = document.getElementById('ep-phone').value.trim();
+            const newIgn = document.getElementById('ep-ign').value.trim();
+            const newGuid = document.getElementById('ep-uid').value.trim();
+
+            try {
+                await db.ref('users/' + U.uid).update({
+                    username: newUname,
+                    phone: newPhone,
+                    game_name: newIgn,
+                    game_uid: newGuid,
+                    avatar_icon: selectedAvatarIcon
+                });
+                if (U) {
+                    U.username = newUname;
+                    U.phone = newPhone;
+                    U.game_name = newIgn;
+                    U.game_uid = newGuid;
+                    U.avatar_icon = selectedAvatarIcon;
+                }
+                showToast('Profile updated successfully! ✨');
+                toggleModal('editProfileModal', false);
+                rSettings(document.getElementById('settingsPage'));
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        });
+
+        // ── RESET PASSWORD MODAL ──
+        function openResetPwModal() {
+            if (!U) return;
+            document.getElementById('reset-pw-email-display').textContent = U.email || auth.currentUser?.email || '';
+            toggleModal('resetPasswordModal', true);
+        }
+
+        async function triggerPasswordResetEmail() {
+            const btn = document.getElementById('sendResetPwBtn');
+            const targetEmail = U?.email || auth.currentUser?.email;
+            if (!targetEmail) return showToast('No email found', true);
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Sending...';
+            btn.disabled = true;
+
+            try {
+                await auth.sendPasswordResetEmail(targetEmail);
+                showToast('Password reset link sent to ' + targetEmail + ' 📧');
+                btn.innerHTML = '<i class="fas fa-check"></i>Email Sent!';
+                setTimeout(() => {
+                    toggleModal('resetPasswordModal', false);
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i>Send Reset Email';
+                    btn.disabled = false;
+                }, 1500);
+            } catch (err) {
+                showToast(err.message, true);
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i>Send Reset Email';
+                btn.disabled = false;
+            }
+        }
+
+        // ── FREE FIRE GAME UID MODAL ──
+        function openFfUidModal() {
+            if (!U) return;
+            document.getElementById('ff-ign-input').value = U.game_name || '';
+            document.getElementById('ff-uid-input').value = U.game_uid || '';
+            toggleModal('ffUidModal', true);
+        }
+
+        document.getElementById('ffUidForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            if (!U) return;
+            const ign = document.getElementById('ff-ign-input').value.trim();
+            const guid = document.getElementById('ff-uid-input').value.trim();
+            try {
+                await db.ref('users/' + U.uid).update({
+                    game_name: ign,
+                    game_uid: guid
+                });
+                if (U) {
+                    U.game_name = ign;
+                    U.game_uid = guid;
+                }
+                showToast('Free Fire game profile saved! 🎮');
+                toggleModal('ffUidModal', false);
+                rSettings(document.getElementById('settingsPage'));
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        });
+
+        // ── REGION SELECTOR MODAL ──
+        function openRegionModal() {
+            const currentReg = U?.region || 'Bangladesh';
+            document.querySelectorAll('.region-check').forEach(el => el.style.display = 'none');
+            if (currentReg.includes('India')) document.getElementById('reg-in').style.display = 'block';
+            else if (currentReg.includes('Pakistan')) document.getElementById('reg-pk').style.display = 'block';
+            else if (currentReg.includes('Nepal')) document.getElementById('reg-np').style.display = 'block';
+            else if (currentReg.includes('Malaysia')) document.getElementById('reg-my').style.display = 'block';
+            else if (currentReg.includes('Global')) document.getElementById('reg-gl').style.display = 'block';
+            else document.getElementById('reg-bd').style.display = 'block';
+
+            toggleModal('regionModal', true);
+        }
+
+        async function saveSelectedRegion(name, flag) {
+            if (!U) return;
+            try {
+                await db.ref('users/' + U.uid).update({ region: name });
+                if (U) U.region = name;
+                showToast(`Server region set to ${flag} ${name}`);
+                toggleModal('regionModal', false);
+                rSettings(document.getElementById('settingsPage'));
+            } catch (e) {
+                showToast(e.message, true);
+            }
+        }
+
+        // ── NOTIFICATIONS PREFERENCES ──
+        function openNotifSettingsModal() {
+            const prefs = JSON.parse(localStorage.getItem('velrix_notif_prefs') || '{}');
+            if (document.getElementById('pref-match-remind')) document.getElementById('pref-match-remind').checked = prefs.match !== false;
+            if (document.getElementById('pref-room-alert')) document.getElementById('pref-room-alert').checked = prefs.room !== false;
+            if (document.getElementById('pref-ref-alert')) document.getElementById('pref-ref-alert').checked = prefs.reward !== false;
+            if (document.getElementById('pref-sound')) document.getElementById('pref-sound').checked = prefs.sound !== false;
+            toggleModal('notifSettingsModal', true);
+        }
+
+        function saveNotifPref() {
+            const prefs = {
+                match: document.getElementById('pref-match-remind')?.checked ?? true,
+                room: document.getElementById('pref-room-alert')?.checked ?? true,
+                reward: document.getElementById('pref-ref-alert')?.checked ?? true,
+                sound: document.getElementById('pref-sound')?.checked ?? true
+            };
+            localStorage.setItem('velrix_notif_prefs', JSON.stringify(prefs));
+            showToast('Preferences saved');
+        }
+
+        // ── FAQ ACCORDION ──
+        function openHelpCenterModal() {
+            toggleModal('helpCenterModal', true);
+        }
+
+        function toggleFaq(headerEl) {
+            const item = headerEl.closest('.faq-item');
+            if (item) item.classList.toggle('open');
+        }
+
+        // ── CONTACT & REPORT MODALS ──
+        function openContactSupportModal() {
+            toggleModal('contactSupportModal', true);
+        }
+
+        function openReportProblemModal() {
+            document.getElementById('reportProblemForm')?.reset();
+            toggleModal('reportProblemModal', true);
+        }
+
+        document.getElementById('reportProblemForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const cat = document.getElementById('rp-category').value;
+            const desc = document.getElementById('rp-desc').value.trim();
+            const b = e.target.querySelector('button[type="submit"]');
+            b.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Submitting...';
+            b.disabled = true;
+
+            try {
+                const ticketId = 'TICKET_' + Date.now();
+                await db.ref('support_tickets/' + ticketId).set({
+                    id: ticketId,
+                    uid: U?.uid || 'guest',
+                    username: U?.username || 'Player',
+                    email: U?.email || 'N/A',
+                    category: cat,
+                    description: desc,
+                    status: 'open',
+                    created_at: new Date().toISOString()
+                });
+                showToast('Ticket #' + ticketId.slice(-6) + ' submitted! Our staff will respond shortly.');
+                toggleModal('reportProblemModal', false);
+            } catch (err) {
+                showToast(err.message || 'Failed to submit ticket', true);
+            } finally {
+                b.innerHTML = '<i class="fas fa-paper-plane"></i>Submit Ticket';
+                b.disabled = false;
+            }
+        });
+
+        // ── LEGAL MODALS ──
+        function openTermsModal() { toggleModal('termsModal', true); }
+        function openPrivacyModal() { toggleModal('privacyModal', true); }
+        function openRulesModal() { toggleModal('rulesModal', true); }
+
+        // ── LOGOUT MODAL ──
+        function openLogoutConfirmModal() { toggleModal('logoutConfirmModal', true); }
+        function confirmLogoutAction() {
+            toggleModal('logoutConfirmModal', false);
+            auth.signOut();
+            showToast('Logged out successfully');
+        }
+
+        // ── SHARE REFERRAL MODAL ──
+        let activeReferralCode = 'VELRIX';
+        function openShareReferralModal(code) {
+            activeReferralCode = code;
+            const el = document.getElementById('share-modal-code');
+            if (el) el.textContent = code;
+            toggleModal('shareReferralModal', true);
+        }
+
+        function shareViaWhatsApp() {
+            const url = `${window.location.origin}${window.location.pathname}?ref=${activeReferralCode}`;
+            const text = encodeURIComponent(`🎮 Join me on Velrix Esports! Compete in Free Fire tournaments, win cash prizes, and use my referral code *${activeReferralCode}* to get a Free Entry Pass!\n\nSign up here: ${url}`);
+            window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+        }
+
+        function shareViaTelegram() {
+            const url = `${window.location.origin}${window.location.pathname}?ref=${activeReferralCode}`;
+            const text = encodeURIComponent(`🎮 Join me on Velrix Esports! Use my code: ${activeReferralCode} for a Free Tournament Pass!`);
+            window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
+        }
+
+        function copyInviteLink() {
+            const url = `${window.location.origin}${window.location.pathname}?ref=${activeReferralCode}`;
+            copyText(url);
         }
 
         // ── UddoktaPay (via Vercel Serverless API) ──
@@ -3329,8 +4415,8 @@
             } catch (err) { showVerify('Error', err.message, '<i class="fas fa-exclamation-triangle" style="color:var(--red)"></i>', true) }
         }
 
-        function doLogout() { if (confirm('Are you sure you want to logout?')) { auth.signOut(); showToast('Logged out successfully') } }
-        function doResetPw() { auth.sendPasswordResetEmail(auth.currentUser.email).then(() => showToast('Reset link sent 📧')).catch(e => showToast(e.message, true)) }
+        function doLogout() { openLogoutConfirmModal(); }
+        function doResetPw() { openResetPwModal(); }
 
         // ── Init ──
         document.addEventListener('DOMContentLoaded', () => {
