@@ -7,7 +7,9 @@
     <title>Velrix Admin — Professional Tournament Platform</title>
     <meta name="description" content="Velrix Admin — Professional esports tournament management platform.">
     <meta name="theme-color" content="#07080D">
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -16,149 +18,896 @@
     <!-- OneSignal SDK -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Sora', 'Inter', sans-serif; -webkit-tap-highlight-color: transparent }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Sora', 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent
+        }
+
         :root {
-            --bg: #07080D; --bg2: #0c0e16; --bg3: #11131C; --bg4: #181b28; --bg5: #1f2335; --bg6: #262a3d;
-            --card: rgba(17, 19, 28, 0.9); --card2: rgba(24, 27, 40, 0.75);
-            --border: rgba(139, 92, 246, 0.18); --border2: rgba(6, 182, 212, 0.18); --border3: rgba(255, 255, 255, 0.07);
-            --violet: #8B5CF6; --violet2: #7C3AED; --violet-glow: rgba(139, 92, 246, 0.35); --violet-glow2: rgba(139, 92, 246, 0.12);
-            --cyan: #06B6D4; --cyan2: #0891B2; --cyan-glow: rgba(6, 182, 212, 0.35); --cyan-glow2: rgba(6, 182, 212, 0.12);
-            --text: #E8E8EC; --text2: #A1A1AA; --text3: #71717A; --text4: #3F3F46;
-            --green: #22c55e; --green-glow: rgba(34, 197, 94, 0.18); --red: #ef4444; --red-glow: rgba(239, 68, 68, 0.18); --yellow: #eab308; --yellow-glow: rgba(234, 179, 8, 0.18);
+            --bg: #07080D;
+            --bg2: #0c0e16;
+            --bg3: #11131C;
+            --bg4: #181b28;
+            --bg5: #1f2335;
+            --bg6: #262a3d;
+            --card: rgba(17, 19, 28, 0.9);
+            --card2: rgba(24, 27, 40, 0.75);
+            --border: rgba(139, 92, 246, 0.18);
+            --border2: rgba(6, 182, 212, 0.18);
+            --border3: rgba(255, 255, 255, 0.07);
+            --violet: #8B5CF6;
+            --violet2: #7C3AED;
+            --violet-glow: rgba(139, 92, 246, 0.35);
+            --violet-glow2: rgba(139, 92, 246, 0.12);
+            --cyan: #06B6D4;
+            --cyan2: #0891B2;
+            --cyan-glow: rgba(6, 182, 212, 0.35);
+            --cyan-glow2: rgba(6, 182, 212, 0.12);
+            --text: #E8E8EC;
+            --text2: #A1A1AA;
+            --text3: #71717A;
+            --text4: #3F3F46;
+            --green: #22c55e;
+            --green-glow: rgba(34, 197, 94, 0.18);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.18);
+            --yellow: #eab308;
+            --yellow-glow: rgba(234, 179, 8, 0.18);
             --gradient: linear-gradient(135deg, var(--violet), var(--cyan));
             --gradient-subtle: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(6, 182, 212, 0.12));
             --gradient-card: linear-gradient(160deg, rgba(139, 92, 246, 0.08), rgba(6, 182, 212, 0.04));
-            --radius: 14px; --radius-sm: 10px; --radius-lg: 20px; --radius-xl: 24px;
-            --shadow-violet: 0 4px 24px var(--violet-glow); --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --shadow-violet: 0 4px 24px var(--violet-glow);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
-        body { background: var(--bg); color: var(--text); overflow-x: hidden; -webkit-user-select: none; user-select: none; min-height: 100vh }
-        body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 20% 15%, rgba(139, 92, 246, 0.07), transparent 50%), radial-gradient(ellipse at 80% 85%, rgba(6, 182, 212, 0.05), transparent 50%); pointer-events: none; z-index: 0 }
-        ::-webkit-scrollbar { width: 4px; height: 4px } ::-webkit-scrollbar-track { background: transparent } ::-webkit-scrollbar-thumb { background: var(--violet); border-radius: 10px }
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none } input[type=number] { -moz-appearance: textfield }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+            min-height: 100vh
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 20% 15%, rgba(139, 92, 246, 0.07), transparent 50%), radial-gradient(ellipse at 80% 85%, rgba(6, 182, 212, 0.05), transparent 50%);
+            pointer-events: none;
+            z-index: 0
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--violet);
+            border-radius: 10px
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield
+        }
 
         /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-16px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes scaleIn { from { transform: scale(0.94); opacity: 0 } to { transform: scale(1); opacity: 1 } }
-        @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
-        @keyframes float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
-        @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.5 } }
-        @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
-        .fade-in { animation: fadeIn .4s ease both }
-        .fade-up { animation: fadeInUp .5s ease both }
-        .scale-in { animation: scaleIn .3s cubic-bezier(0.16, 1, 0.3, 1) both }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-16px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.94);
+                opacity: 0
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg)
+            }
+
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-6px)
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.5
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0
+            }
+
+            100% {
+                background-position: 200% 0
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn .4s ease both
+        }
+
+        .fade-up {
+            animation: fadeInUp .5s ease both
+        }
+
+        .scale-in {
+            animation: scaleIn .3s cubic-bezier(0.16, 1, 0.3, 1) both
+        }
 
         /* App Container */
-        #admin-app { max-width: 600px; margin: 0 auto; min-height: 100vh; position: relative; z-index: 1 }
-        .page { display: none; padding-bottom: 95px } .page.active { display: block; animation: fadeIn .35s ease }
+        #admin-app {
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1
+        }
+
+        .page {
+            display: none;
+            padding-bottom: 95px
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn .35s ease
+        }
 
         /* Bottom Nav */
-        #admin-bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; z-index: 100; display: none; background: rgba(7, 8, 13, 0.96); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border-top: 1px solid var(--border3); padding: 6px 0 env(safe-area-inset-bottom, 8px) }
-        .nav-bar { display: flex; justify-content: space-around; align-items: center; padding: 2px 8px }
-        .a-nav { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 10px; border-radius: 14px; cursor: pointer; transition: all .3s cubic-bezier(.4, 0, .2, 1); position: relative; text-decoration: none; color: var(--text4); min-width: 52px }
-        .a-nav i { font-size: 18px; transition: all .3s } .a-nav span { font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase }
-        .a-nav.active { color: var(--violet) } .a-nav.active i { transform: translateY(-2px); color: var(--violet) }
-        .a-nav.active::after { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 22px; height: 3px; background: var(--gradient); border-radius: 0 0 4px 4px; box-shadow: 0 2px 12px var(--violet-glow) }
-        .nav-badge { position: absolute; top: 0; right: 4px; min-width: 16px; height: 16px; border-radius: 100px; background: var(--red); color: #fff; font-size: 9px; font-weight: 800; display: none; align-items: center; justify-content: center; padding: 0 4px; box-shadow: 0 2px 8px var(--red-glow) }
+        #admin-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px;
+            z-index: 100;
+            display: none;
+            background: rgba(7, 8, 13, 0.96);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border-top: 1px solid var(--border3);
+            padding: 6px 0 env(safe-area-inset-bottom, 8px)
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 2px 8px
+        }
+
+        .a-nav {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 8px 10px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all .3s cubic-bezier(.4, 0, .2, 1);
+            position: relative;
+            text-decoration: none;
+            color: var(--text4);
+            min-width: 52px
+        }
+
+        .a-nav i {
+            font-size: 18px;
+            transition: all .3s
+        }
+
+        .a-nav span {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .4px;
+            text-transform: uppercase
+        }
+
+        .a-nav.active {
+            color: var(--violet)
+        }
+
+        .a-nav.active i {
+            transform: translateY(-2px);
+            color: var(--violet)
+        }
+
+        .a-nav.active::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 22px;
+            height: 3px;
+            background: var(--gradient);
+            border-radius: 0 0 4px 4px;
+            box-shadow: 0 2px 12px var(--violet-glow)
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: 0;
+            right: 4px;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 100px;
+            background: var(--red);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 800;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            box-shadow: 0 2px 8px var(--red-glow)
+        }
 
         /* UI Components */
-        .card { background: var(--card); border: 1px solid var(--border3); border-radius: var(--radius-lg); padding: 20px; transition: all .3s; backdrop-filter: blur(14px); position: relative; overflow: hidden }
-        .card:hover { border-color: rgba(139, 92, 246, 0.25) }
-        .btn { padding: 13px 22px; border-radius: var(--radius); font-weight: 700; font-size: 13px; border: none; cursor: pointer; transition: all .25s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; position: relative; overflow: hidden; letter-spacing: .3px; font-family: 'Sora', sans-serif }
-        .btn:active { transform: scale(0.97) }
-        .btn-primary { background: var(--gradient); color: #fff; box-shadow: var(--shadow-violet) }
-        .btn-secondary { background: rgba(6, 182, 212, 0.08); color: var(--cyan); border: 1.5px solid rgba(6, 182, 212, 0.3) }
-        .btn-outline { background: transparent; color: var(--text2); border: 1.5px solid var(--border3) }
-        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 16px var(--red-glow) }
-        .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 4px 16px var(--green-glow) }
-        .btn-warning { background: linear-gradient(135deg, #eab308, #ca8a04); color: #07080D; font-weight: 800 }
-        .btn-ghost { background: transparent; color: var(--text3); border: none; padding: 8px 12px; width: auto }
-        .btn-sm { padding: 8px 14px; font-size: 11px; border-radius: var(--radius-sm) }
-        .btn-lg { padding: 16px 26px; font-size: 15px; border-radius: 16px }
-        .input, .textarea, .select { width: 100%; padding: 13px 15px; background: var(--bg3); border: 1.5px solid var(--border3); border-radius: var(--radius-sm); color: var(--text); font-size: 13px; transition: all .25s; outline: none; font-family: 'Sora', sans-serif }
-        .textarea { resize: vertical; min-height: 80px; line-height: 1.5 }
-        .input:focus, .textarea:focus, .select:focus { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-glow2); background: var(--bg4) }
-        .input::placeholder, .textarea::placeholder { color: var(--text4) }
-        select.input { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%2371717A'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; cursor: pointer }
-        .label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text3); margin-bottom: 7px; letter-spacing: .6px; text-transform: uppercase }
-        .label-hint { font-size: 10px; font-weight: 500; color: var(--text4); text-transform: none; letter-spacing: 0 }
-        .space-y > * + * { margin-top: 12px }
-        .section-title { font-size: 19px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px }
-        .divider { height: 1px; background: var(--border3); margin: 16px 0 }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border3);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            transition: all .3s;
+            backdrop-filter: blur(14px);
+            position: relative;
+            overflow: hidden
+        }
+
+        .card:hover {
+            border-color: rgba(139, 92, 246, 0.25)
+        }
+
+        .btn {
+            padding: 13px 22px;
+            border-radius: var(--radius);
+            font-weight: 700;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            transition: all .25s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: .3px;
+            font-family: 'Sora', sans-serif
+        }
+
+        .btn:active {
+            transform: scale(0.97)
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: #fff;
+            box-shadow: var(--shadow-violet)
+        }
+
+        .btn-secondary {
+            background: rgba(6, 182, 212, 0.08);
+            color: var(--cyan);
+            border: 1.5px solid rgba(6, 182, 212, 0.3)
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text2);
+            border: 1.5px solid var(--border3)
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            box-shadow: 0 4px 16px var(--red-glow)
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+            box-shadow: 0 4px 16px var(--green-glow)
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #eab308, #ca8a04);
+            color: #07080D;
+            font-weight: 800
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text3);
+            border: none;
+            padding: 8px 12px;
+            width: auto
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 11px;
+            border-radius: var(--radius-sm)
+        }
+
+        .btn-lg {
+            padding: 16px 26px;
+            font-size: 15px;
+            border-radius: 16px
+        }
+
+        .input,
+        .textarea,
+        .select {
+            width: 100%;
+            padding: 13px 15px;
+            background: var(--bg3);
+            border: 1.5px solid var(--border3);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 13px;
+            transition: all .25s;
+            outline: none;
+            font-family: 'Sora', sans-serif
+        }
+
+        .textarea {
+            resize: vertical;
+            min-height: 80px;
+            line-height: 1.5
+        }
+
+        .input:focus,
+        .textarea:focus,
+        .select:focus {
+            border-color: var(--violet);
+            box-shadow: 0 0 0 3px var(--violet-glow2);
+            background: var(--bg4)
+        }
+
+        .input::placeholder,
+        .textarea::placeholder {
+            color: var(--text4)
+        }
+
+        select.input {
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%2371717A'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            cursor: pointer
+        }
+
+        .label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text3);
+            margin-bottom: 7px;
+            letter-spacing: .6px;
+            text-transform: uppercase
+        }
+
+        .label-hint {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text4);
+            text-transform: none;
+            letter-spacing: 0
+        }
+
+        .space-y>*+* {
+            margin-top: 12px
+        }
+
+        .section-title {
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: -.3px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border3);
+            margin: 16px 0
+        }
 
         /* Toast */
-        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: var(--radius); font-size: 13px; font-weight: 600; z-index: 1000; display: none; animation: fadeInDown .3s ease; backdrop-filter: blur(20px); max-width: 90%; box-shadow: var(--shadow-card) }
-        .toast-s { background: rgba(34, 197, 94, 0.95); color: #fff } .toast-e { background: rgba(239, 68, 68, 0.95); color: #fff }
+        #toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 1000;
+            display: none;
+            animation: fadeInDown .3s ease;
+            backdrop-filter: blur(20px);
+            max-width: 90%;
+            box-shadow: var(--shadow-card)
+        }
+
+        .toast-s {
+            background: rgba(34, 197, 94, 0.95);
+            color: #fff
+        }
+
+        .toast-e {
+            background: rgba(239, 68, 68, 0.95);
+            color: #fff
+        }
 
         /* Badges */
-        .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 100px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px }
-        .badge-draft { background: rgba(113, 113, 122, 0.2); color: #A1A1AA; border: 1px solid rgba(113, 113, 122, 0.3) }
-        .badge-pending, .badge-upcoming { background: var(--yellow-glow); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.3) }
-        .badge-live { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); animation: pulse 2s infinite }
-        .badge-approved, .badge-completed { background: var(--green-glow); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.3) }
-        .badge-admin { background: var(--gradient); color: #fff; border: none }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .5px
+        }
+
+        .badge-draft {
+            background: rgba(113, 113, 122, 0.2);
+            color: #A1A1AA;
+            border: 1px solid rgba(113, 113, 122, 0.3)
+        }
+
+        .badge-pending,
+        .badge-upcoming {
+            background: var(--yellow-glow);
+            color: var(--yellow);
+            border: 1px solid rgba(234, 179, 8, 0.3)
+        }
+
+        .badge-live {
+            background: var(--red-glow);
+            color: var(--red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            animation: pulse 2s infinite
+        }
+
+        .badge-approved,
+        .badge-completed {
+            background: var(--green-glow);
+            color: var(--green);
+            border: 1px solid rgba(34, 197, 94, 0.3)
+        }
+
+        .badge-admin {
+            background: var(--gradient);
+            color: #fff;
+            border: none
+        }
 
         /* Tab Bar */
-        .tab-bar { display: flex; background: var(--bg3); border-radius: var(--radius); padding: 4px; gap: 4px; margin-bottom: 18px; border: 1px solid var(--border3); overflow-x: auto }
-        .tab { flex: 1; min-width: 70px; padding: 10px 12px; text-align: center; border-radius: var(--radius-sm); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .25s; color: var(--text4); letter-spacing: .3px; white-space: nowrap }
-        .tab.active { background: var(--gradient); color: #fff; box-shadow: var(--shadow-violet) }
+        .tab-bar {
+            display: flex;
+            background: var(--bg3);
+            border-radius: var(--radius);
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 18px;
+            border: 1px solid var(--border3);
+            overflow-x: auto
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 70px;
+            padding: 10px 12px;
+            text-align: center;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .25s;
+            color: var(--text4);
+            letter-spacing: .3px;
+            white-space: nowrap
+        }
+
+        .tab.active {
+            background: var(--gradient);
+            color: #fff;
+            box-shadow: var(--shadow-violet)
+        }
 
         /* Stepper Wizard */
-        .stepper-header { background: var(--bg3); border: 1px solid var(--border3); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 18px }
-        .stepper-progress { height: 4px; background: var(--bg5); border-radius: 10px; margin-bottom: 12px; overflow: hidden; position: relative }
-        .stepper-progress-bar { height: 100%; background: var(--gradient); transition: width .35s ease; border-radius: 10px; box-shadow: 0 0 10px var(--violet-glow) }
-        .stepper-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px }
-        .step-pill { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; background: var(--bg4); color: var(--text3); border: 1px solid var(--border3); cursor: pointer; white-space: nowrap; transition: all .25s }
-        .step-pill.active { background: var(--gradient-subtle); color: var(--violet); border-color: var(--violet); box-shadow: 0 0 12px var(--violet-glow2) }
-        .step-pill.completed { background: rgba(34, 197, 94, 0.08); color: var(--green); border-color: rgba(34, 197, 94, 0.3) }
-        .step-pill-num { width: 18px; height: 18px; border-radius: 50%; background: var(--bg5); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800 }
-        .step-pill.active .step-pill-num { background: var(--violet); color: #fff }
-        .step-pill.completed .step-pill-num { background: var(--green); color: #fff }
+        .stepper-header {
+            background: var(--bg3);
+            border: 1px solid var(--border3);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            margin-bottom: 18px
+        }
+
+        .stepper-progress {
+            height: 4px;
+            background: var(--bg5);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            position: relative
+        }
+
+        .stepper-progress-bar {
+            height: 100%;
+            background: var(--gradient);
+            transition: width .35s ease;
+            border-radius: 10px;
+            box-shadow: 0 0 10px var(--violet-glow)
+        }
+
+        .stepper-scroll {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px
+        }
+
+        .step-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            background: var(--bg4);
+            color: var(--text3);
+            border: 1px solid var(--border3);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all .25s
+        }
+
+        .step-pill.active {
+            background: var(--gradient-subtle);
+            color: var(--violet);
+            border-color: var(--violet);
+            box-shadow: 0 0 12px var(--violet-glow2)
+        }
+
+        .step-pill.completed {
+            background: rgba(34, 197, 94, 0.08);
+            color: var(--green);
+            border-color: rgba(34, 197, 94, 0.3)
+        }
+
+        .step-pill-num {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--bg5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 800
+        }
+
+        .step-pill.active .step-pill-num {
+            background: var(--violet);
+            color: #fff
+        }
+
+        .step-pill.completed .step-pill-num {
+            background: var(--green);
+            color: #fff
+        }
 
         /* Wizard Sticky Action Bar */
-        .wizard-footer { position: sticky; bottom: 0; left: 0; right: 0; background: rgba(7, 8, 13, 0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border3); padding: 14px 20px; display: flex; gap: 8px; align-items: center; z-index: 50; margin: 20px -20px -20px -20px; border-radius: 0 0 var(--radius-lg) var(--radius-lg) }
+        .wizard-footer {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(7, 8, 13, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border3);
+            padding: 14px 20px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            z-index: 50;
+            margin: 20px -20px -20px -20px;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg)
+        }
 
         /* Live Image Preview */
-        .thumb-preview-box { width: 100%; height: 190px; border-radius: var(--radius); background: var(--bg4); border: 1.5px dashed var(--border3); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; margin-top: 10px }
-        .thumb-preview-img { width: 100%; height: 100%; object-fit: cover; transition: opacity .3s }
-        .thumb-placeholder { text-align: center; color: var(--text4); padding: 20px }
-        .thumb-placeholder i { font-size: 32px; margin-bottom: 8px; color: var(--text4) }
+        .thumb-preview-box {
+            width: 100%;
+            height: 190px;
+            border-radius: var(--radius);
+            background: var(--bg4);
+            border: 1.5px dashed var(--border3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            margin-top: 10px
+        }
+
+        .thumb-preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity .3s
+        }
+
+        .thumb-placeholder {
+            text-align: center;
+            color: var(--text4);
+            padding: 20px
+        }
+
+        .thumb-placeholder i {
+            font-size: 32px;
+            margin-bottom: 8px;
+            color: var(--text4)
+        }
 
         /* Prize Pool Allocator */
-        .prize-bar { height: 8px; background: var(--bg5); border-radius: 10px; overflow: hidden; display: flex; margin: 12px 0 }
-        .prize-bar-segment { height: 100%; transition: width .3s ease }
+        .prize-bar {
+            height: 8px;
+            background: var(--bg5);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            margin: 12px 0
+        }
+
+        .prize-bar-segment {
+            height: 100%;
+            transition: width .3s ease
+        }
 
         /* Neon Spinner */
-        .neon-spinner { width: 44px; height: 44px; margin: 0 auto; border-radius: 50%; border: 3px solid var(--bg5); border-top-color: var(--violet); border-right-color: var(--cyan); animation: spin .8s linear infinite; box-shadow: 0 0 16px var(--violet-glow) }
-        .watermark { text-align: center; padding: 20px; font-size: 10px; color: var(--text4); letter-spacing: 1px; font-weight: 600 }
-        .watermark span { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent }
+        .neon-spinner {
+            width: 44px;
+            height: 44px;
+            margin: 0 auto;
+            border-radius: 50%;
+            border: 3px solid var(--bg5);
+            border-top-color: var(--violet);
+            border-right-color: var(--cyan);
+            animation: spin .8s linear infinite;
+            box-shadow: 0 0 16px var(--violet-glow)
+        }
+
+        .watermark {
+            text-align: center;
+            padding: 20px;
+            font-size: 10px;
+            color: var(--text4);
+            letter-spacing: 1px;
+            font-weight: 600
+        }
+
+        .watermark span {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
 
         /* Floating Watermark */
-        #veltrix-watermark { position: fixed; z-index: 300; left: 50%; transform: translateX(-50%); bottom: 76px; display: none; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 100px; background: rgba(7, 8, 13, 0.85); border: 1px solid var(--border3); backdrop-filter: blur(12px); font-size: 10px; font-weight: 600; color: var(--text4); pointer-events: none }
-        #veltrix-watermark .wm-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gradient); flex-shrink: 0 }
-        #veltrix-watermark .wm-label { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent }
-        body.authed #veltrix-watermark { display: flex }
+        #veltrix-watermark {
+            position: fixed;
+            z-index: 300;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 76px;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 100px;
+            background: rgba(7, 8, 13, 0.85);
+            border: 1px solid var(--border3);
+            backdrop-filter: blur(12px);
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text4);
+            pointer-events: none
+        }
+
+        #veltrix-watermark .wm-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--gradient);
+            flex-shrink: 0
+        }
+
+        #veltrix-watermark .wm-label {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        body.authed #veltrix-watermark {
+            display: flex
+        }
 
         /* Custom Mode Cards */
-        .mode-card { padding: 14px; border-radius: var(--radius); background: var(--bg3); border: 1.5px solid var(--border3); cursor: pointer; transition: all .25s }
-        .mode-card.selected { border-color: var(--violet); background: var(--gradient-subtle); box-shadow: 0 0 16px var(--violet-glow2) }
+        .mode-card {
+            padding: 14px;
+            border-radius: var(--radius);
+            background: var(--bg3);
+            border: 1.5px solid var(--border3);
+            cursor: pointer;
+            transition: all .25s
+        }
+
+        .mode-card.selected {
+            border-color: var(--violet);
+            background: var(--gradient-subtle);
+            box-shadow: 0 0 16px var(--violet-glow2)
+        }
 
         /* Modal Overlays & Drawers */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(7, 8, 13, 0.88); backdrop-filter: blur(16px); z-index: 500; display: none; align-items: flex-end; justify-content: center }
-        .modal-content { background: var(--bg2); border-top: 1px solid var(--border); border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: 24px 20px 40px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; animation: slideUp .3s ease; box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6) }
-        @media(min-width: 600px) {
-            .modal-overlay { align-items: center; padding: 20px }
-            .modal-content { border-radius: var(--radius-xl); border: 1px solid var(--border) }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 8, 13, 0.88);
+            backdrop-filter: blur(16px);
+            z-index: 500;
+            display: none;
+            align-items: flex-end;
+            justify-content: center
         }
-        .modal-handle { width: 40px; height: 4px; border-radius: 10px; background: var(--text4); margin: 0 auto 16px }
-        .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 10px }
+
+        .modal-content {
+            background: var(--bg2);
+            border-top: 1px solid var(--border);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            padding: 24px 20px 40px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp .3s ease;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6)
+        }
+
+        @media(min-width: 600px) {
+            .modal-overlay {
+                align-items: center;
+                padding: 20px
+            }
+
+            .modal-content {
+                border-radius: var(--radius-xl);
+                border: 1px solid var(--border)
+            }
+        }
+
+        .modal-handle {
+            width: 40px;
+            height: 4px;
+            border-radius: 10px;
+            background: var(--text4);
+            margin: 0 auto 16px
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
     </style>
 </head>
 
 <body>
     <div id="admin-app">
-        <div id="initial-loader" style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px">
+        <div id="initial-loader"
+            style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px">
             <div class="neon-spinner"></div>
             <p style="color:var(--text3);font-size:13px;font-weight:600">Loading Velrix Esports Admin...</p>
         </div>
@@ -177,14 +926,20 @@
 
         <nav id="admin-bottom-nav">
             <div class="nav-bar">
-                <a class="a-nav" onclick="navigateTo('adminDashboardPage')" id="anav-dash"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
-                <a class="a-nav" onclick="navigateTo('adminTournamentPage')" id="anav-tourn"><i class="fas fa-trophy"></i><span>Tourneys</span></a>
-                <a class="a-nav" onclick="navigateTo('adminGamesPage')" id="anav-games"><i class="fas fa-gamepad"></i><span>Games</span></a>
+                <a class="a-nav" onclick="navigateTo('adminDashboardPage')" id="anav-dash"><i
+                        class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+                <a class="a-nav" onclick="navigateTo('adminTournamentPage')" id="anav-tourn"><i
+                        class="fas fa-trophy"></i><span>Tourneys</span></a>
+                <a class="a-nav" onclick="navigateTo('adminGamesPage')" id="anav-games"><i
+                        class="fas fa-gamepad"></i><span>Games</span></a>
                 <a class="a-nav" onclick="navigateTo('adminPaymentsPage')" id="anav-pay">
-                    <div style="position:relative"><i class="fas fa-credit-card"></i><span id="payment-badge" class="nav-badge"></span></div><span>Payments</span>
+                    <div style="position:relative"><i class="fas fa-credit-card"></i><span id="payment-badge"
+                            class="nav-badge"></span></div><span>Payments</span>
                 </a>
-                <a class="a-nav" onclick="navigateTo('adminUsersPage')" id="anav-users"><i class="fas fa-users"></i><span>Users</span></a>
-                <a class="a-nav" onclick="navigateTo('adminSettingsPage')" id="anav-set"><i class="fas fa-cog"></i><span>Settings</span></a>
+                <a class="a-nav" onclick="navigateTo('adminUsersPage')" id="anav-users"><i
+                        class="fas fa-users"></i><span>Users</span></a>
+                <a class="a-nav" onclick="navigateTo('adminSettingsPage')" id="anav-set"><i
+                        class="fas fa-cog"></i><span>Settings</span></a>
             </div>
         </nav>
     </div>
@@ -196,24 +951,35 @@
             <div class="modal-title"><i class="fas fa-edit" style="color:var(--yellow)"></i>Edit Tournament</div>
             <form id="adminEditTournamentForm" class="space-y">
                 <input type="hidden" id="edit-t-id">
-                <div><label class="label">Tournament Title *</label><input type="text" id="edit-t-title" class="input" required></div>
+                <div><label class="label">Tournament Title *</label><input type="text" id="edit-t-title" class="input"
+                        required></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                    <div><label class="label">Game Name</label><input type="text" id="edit-t-game" class="input" required></div>
-                    <div><label class="label">Match Mode</label><input type="text" id="edit-t-mode" placeholder="e.g. Battle Royale / Squad" class="input" required></div>
+                    <div><label class="label">Game Name</label><input type="text" id="edit-t-game" class="input"
+                            required></div>
+                    <div><label class="label">Match Mode</label><input type="text" id="edit-t-mode"
+                            placeholder="e.g. Battle Royale / Squad" class="input" required></div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                    <div><label class="label">Map</label><input type="text" id="edit-t-map" placeholder="Bermuda / Erangel" class="input"></div>
-                    <div><label class="label">Max Slots</label><input type="number" id="edit-t-slots" placeholder="48" class="input" min="2"></div>
+                    <div><label class="label">Map</label><input type="text" id="edit-t-map"
+                            placeholder="Bermuda / Erangel" class="input"></div>
+                    <div><label class="label">Max Slots</label><input type="number" id="edit-t-slots" placeholder="48"
+                            class="input" min="2"></div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                    <div><label class="label">Entry Fee (৳) *</label><input type="number" id="edit-t-fee" class="input" min="0" required></div>
-                    <div><label class="label">Prize Pool (৳) *</label><input type="number" id="edit-t-prize" class="input" min="0" required></div>
+                    <div><label class="label">Entry Fee (৳) *</label><input type="number" id="edit-t-fee" class="input"
+                            min="0" required></div>
+                    <div><label class="label">Prize Pool (৳) *</label><input type="number" id="edit-t-prize"
+                            class="input" min="0" required></div>
                 </div>
-                <div><label class="label">Match Date & Time *</label><input type="datetime-local" id="edit-t-time" class="input" required></div>
-                <div><label class="label">Thumbnail / Banner URL</label><input type="url" id="edit-t-thumb" placeholder="https://..." class="input"></div>
+                <div><label class="label">Match Date & Time *</label><input type="datetime-local" id="edit-t-time"
+                        class="input" required></div>
+                <div><label class="label">Thumbnail / Banner URL</label><input type="url" id="edit-t-thumb"
+                        placeholder="https://..." class="input"></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                    <div><label class="label">Room ID</label><input type="text" id="edit-t-roomid" placeholder="Optional" class="input"></div>
-                    <div><label class="label">Room Password</label><input type="text" id="edit-t-roompass" placeholder="Optional" class="input"></div>
+                    <div><label class="label">Room ID</label><input type="text" id="edit-t-roomid"
+                            placeholder="Optional" class="input"></div>
+                    <div><label class="label">Room Password</label><input type="text" id="edit-t-roompass"
+                            placeholder="Optional" class="input"></div>
                 </div>
                 <div>
                     <label class="label">Status</label>
@@ -224,7 +990,8 @@
                         <option value="DRAFT">DRAFT</option>
                     </select>
                 </div>
-                <div><label class="label">Rules & Notes</label><textarea id="edit-t-rules" class="textarea" rows="3" placeholder="Tournament match rules..."></textarea></div>
+                <div><label class="label">Rules & Notes</label><textarea id="edit-t-rules" class="textarea" rows="3"
+                        placeholder="Tournament match rules..."></textarea></div>
                 <div style="display:flex;gap:8px;margin-top:16px">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>Save Changes</button>
                     <button type="button" onclick="closeEditTournamentModal()" class="btn btn-outline">Cancel</button>
@@ -237,7 +1004,8 @@
     <div id="modPermissionsModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-handle"></div>
-            <div class="modal-title"><i class="fas fa-user-shield" style="color:var(--cyan)"></i>Moderator Permissions</div>
+            <div class="modal-title"><i class="fas fa-user-shield" style="color:var(--cyan)"></i>Moderator Permissions
+            </div>
             <div class="space-y">
                 <input type="hidden" id="perm-target-uid">
                 <div class="card" style="padding:14px;background:var(--bg4);border:1px solid var(--border3)">
@@ -245,48 +1013,104 @@
                     <p style="font-size:11px;color:var(--text4)" id="perm-mod-email">mod@velrix.com</p>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Individual Access Controls</span>
+                    <span
+                        style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Individual
+                        Access Controls</span>
                     <div style="display:flex;gap:6px">
-                        <button type="button" onclick="toggleAllModPerms(true)" class="btn btn-ghost btn-sm" style="color:var(--cyan);font-size:11px;padding:4px 8px"><i class="fas fa-check-double"></i> All</button>
-                        <button type="button" onclick="toggleAllModPerms(false)" class="btn btn-ghost btn-sm" style="color:var(--red);font-size:11px;padding:4px 8px"><i class="fas fa-ban"></i> None</button>
+                        <button type="button" onclick="toggleAllModPerms(true)" class="btn btn-ghost btn-sm"
+                            style="color:var(--cyan);font-size:11px;padding:4px 8px"><i class="fas fa-check-double"></i>
+                            All</button>
+                        <button type="button" onclick="toggleAllModPerms(false)" class="btn btn-ghost btn-sm"
+                            style="color:var(--red);font-size:11px;padding:4px 8px"><i class="fas fa-ban"></i>
+                            None</button>
                     </div>
                 </div>
                 <div class="space-y" id="perm-checkboxes-list">
-                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
-                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-eye" style="color:var(--cyan);margin-right:8px"></i>View Tournaments</p><p style="font-size:10px;color:var(--text4)">Browse tournaments & match schedules</p></div>
-                        <input type="checkbox" id="perm_view_tournaments" style="width:18px;height:18px;accent-color:var(--cyan)">
+                    <label class="setting-item"
+                        style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div>
+                            <p style="font-weight:700;font-size:13px"><i class="fas fa-eye"
+                                    style="color:var(--cyan);margin-right:8px"></i>View Tournaments</p>
+                            <p style="font-size:10px;color:var(--text4)">Browse tournaments & match schedules</p>
+                        </div>
+                        <input type="checkbox" id="perm_view_tournaments"
+                            style="width:18px;height:18px;accent-color:var(--cyan)">
                     </label>
-                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
-                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-edit" style="color:var(--yellow);margin-right:8px"></i>Edit Tournaments</p><p style="font-size:10px;color:var(--text4)">Create, update, pause, and cancel matches</p></div>
-                        <input type="checkbox" id="perm_edit_tournaments" style="width:18px;height:18px;accent-color:var(--yellow)">
+                    <label class="setting-item"
+                        style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div>
+                            <p style="font-weight:700;font-size:13px"><i class="fas fa-edit"
+                                    style="color:var(--yellow);margin-right:8px"></i>Edit Tournaments</p>
+                            <p style="font-size:10px;color:var(--text4)">Create, update, pause, and cancel matches</p>
+                        </div>
+                        <input type="checkbox" id="perm_edit_tournaments"
+                            style="width:18px;height:18px;accent-color:var(--yellow)">
                     </label>
-                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
-                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-user-check" style="color:var(--green);margin-right:8px"></i>Manage Players</p><p style="font-size:10px;color:var(--text4)">Verify players, remove invalid participants</p></div>
-                        <input type="checkbox" id="perm_manage_players" style="width:18px;height:18px;accent-color:var(--green)">
+                    <label class="setting-item"
+                        style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div>
+                            <p style="font-weight:700;font-size:13px"><i class="fas fa-user-check"
+                                    style="color:var(--green);margin-right:8px"></i>Manage Players</p>
+                            <p style="font-size:10px;color:var(--text4)">Verify players, remove invalid participants</p>
+                        </div>
+                        <input type="checkbox" id="perm_manage_players"
+                            style="width:18px;height:18px;accent-color:var(--green)">
                     </label>
-                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
-                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-users" style="color:var(--violet);margin-right:8px"></i>Manage Teams</p><p style="font-size:10px;color:var(--text4)">Review team rosters & squad compositions</p></div>
-                        <input type="checkbox" id="perm_manage_teams" style="width:18px;height:18px;accent-color:var(--violet)">
+                    <label class="setting-item"
+                        style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div>
+                            <p style="font-weight:700;font-size:13px"><i class="fas fa-users"
+                                    style="color:var(--violet);margin-right:8px"></i>Manage Teams</p>
+                            <p style="font-size:10px;color:var(--text4)">Review team rosters & squad compositions</p>
+                        </div>
+                        <input type="checkbox" id="perm_manage_teams"
+                            style="width:18px;height:18px;accent-color:var(--violet)">
                     </label>
-                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
-                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-trophy" style="color:var(--yellow);margin-right:8px"></i>Verify Results</p><p style="font-size:10px;color:var(--text4)">Check proof screenshots & declare winners</p></div>
-                        <input type="checkbox" id="perm_verify_results" style="width:18px;height:18px;accent-color:var(--yellow)">
+                    <label class="setting-item"
+                        style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div>
+                            <p style="font-weight:700;font-size:13px"><i class="fas fa-trophy"
+                                    style="color:var(--yellow);margin-right:8px"></i>Verify Results</p>
+                            <p style="font-size:10px;color:var(--text4)">Check proof screenshots & declare winners</p>
+                        </div>
+                        <input type="checkbox" id="perm_verify_results"
+                            style="width:18px;height:18px;accent-color:var(--yellow)">
                     </label>
-                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
-                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-flag" style="color:var(--red);margin-right:8px"></i>Manage Reports</p><p style="font-size:10px;color:var(--text4)">Investigate disputes, rule violations & tickets</p></div>
-                        <input type="checkbox" id="perm_manage_reports" style="width:18px;height:18px;accent-color:var(--red)">
+                    <label class="setting-item"
+                        style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div>
+                            <p style="font-weight:700;font-size:13px"><i class="fas fa-flag"
+                                    style="color:var(--red);margin-right:8px"></i>Manage Reports</p>
+                            <p style="font-size:10px;color:var(--text4)">Investigate disputes, rule violations & tickets
+                            </p>
+                        </div>
+                        <input type="checkbox" id="perm_manage_reports"
+                            style="width:18px;height:18px;accent-color:var(--red)">
                     </label>
-                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
-                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-user-slash" style="color:var(--red);margin-right:8px"></i>Ban Players</p><p style="font-size:10px;color:var(--text4)">Issue warnings & temporary/permanent bans</p></div>
-                        <input type="checkbox" id="perm_ban_players" style="width:18px;height:18px;accent-color:var(--red)">
+                    <label class="setting-item"
+                        style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div>
+                            <p style="font-weight:700;font-size:13px"><i class="fas fa-user-slash"
+                                    style="color:var(--red);margin-right:8px"></i>Ban Players</p>
+                            <p style="font-size:10px;color:var(--text4)">Issue warnings & temporary/permanent bans</p>
+                        </div>
+                        <input type="checkbox" id="perm_ban_players"
+                            style="width:18px;height:18px;accent-color:var(--red)">
                     </label>
-                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
-                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-bell" style="color:var(--cyan);margin-right:8px"></i>Send Notifications</p><p style="font-size:10px;color:var(--text4)">Broadcast OneSignal push alerts & reminders</p></div>
-                        <input type="checkbox" id="perm_send_notifications" style="width:18px;height:18px;accent-color:var(--cyan)">
+                    <label class="setting-item"
+                        style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div>
+                            <p style="font-weight:700;font-size:13px"><i class="fas fa-bell"
+                                    style="color:var(--cyan);margin-right:8px"></i>Send Notifications</p>
+                            <p style="font-size:10px;color:var(--text4)">Broadcast OneSignal push alerts & reminders</p>
+                        </div>
+                        <input type="checkbox" id="perm_send_notifications"
+                            style="width:18px;height:18px;accent-color:var(--cyan)">
                     </label>
                 </div>
                 <div style="display:flex;gap:8px;margin-top:16px">
-                    <button type="button" onclick="saveModPermissions()" class="btn btn-primary"><i class="fas fa-save"></i>Save Permissions</button>
+                    <button type="button" onclick="saveModPermissions()" class="btn btn-primary"><i
+                            class="fas fa-save"></i>Save Permissions</button>
                     <button type="button" onclick="closeModPermissionsModal()" class="btn btn-outline">Cancel</button>
                 </div>
             </div>
@@ -297,7 +1121,8 @@
     <div id="adminPushModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-handle"></div>
-            <div class="modal-title"><i class="fas fa-paper-plane" style="color:var(--cyan)"></i>Send OneSignal Push Notification</div>
+            <div class="modal-title"><i class="fas fa-paper-plane" style="color:var(--cyan)"></i>Send OneSignal Push
+                Notification</div>
             <form id="adminPushForm" class="space-y">
                 <div>
                     <label class="label">Target Audience *</label>
@@ -312,25 +1137,31 @@
                 </div>
                 <div>
                     <label class="label">Notification Title *</label>
-                    <input type="text" id="apush-title" placeholder="e.g. 🔴 Free Fire Match Room is Live!" class="input" required>
+                    <input type="text" id="apush-title" placeholder="e.g. 🔴 Free Fire Match Room is Live!"
+                        class="input" required>
                 </div>
                 <div>
                     <label class="label">Message Body *</label>
-                    <textarea id="apush-message" class="textarea" rows="3" placeholder="Room ID & Password have been published. Join your lobby now!" required></textarea>
+                    <textarea id="apush-message" class="textarea" rows="3"
+                        placeholder="Room ID & Password have been published. Join your lobby now!" required></textarea>
                 </div>
                 <div>
-                    <label class="label">Image / Banner URL <span style="font-size:10px;color:var(--text4)">(Optional)</span></label>
+                    <label class="label">Image / Banner URL <span
+                            style="font-size:10px;color:var(--text4)">(Optional)</span></label>
                     <input type="url" id="apush-image" placeholder="https://images.unsplash.com/..." class="input">
                 </div>
                 <div>
-                    <label class="label">Action / Launch URL <span style="font-size:10px;color:var(--text4)">(Optional)</span></label>
+                    <label class="label">Action / Launch URL <span
+                            style="font-size:10px;color:var(--text4)">(Optional)</span></label>
                     <input type="text" id="apush-url" placeholder="index.html or custom action link" class="input">
                 </div>
                 <div class="info-box" style="font-size:11px">
-                    <i class="fas fa-mobile-alt" style="color:var(--cyan);margin-right:6px"></i>Dispatches via OneSignal REST API & Median Web-to-APK OneSignal Bridge.
+                    <i class="fas fa-mobile-alt" style="color:var(--cyan);margin-right:6px"></i>Dispatches via OneSignal
+                    REST API & Median Web-to-APK OneSignal Bridge.
                 </div>
                 <div style="display:flex;gap:8px;margin-top:16px">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-bolt"></i>Dispatch Push Broadcast</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-bolt"></i>Dispatch Push
+                        Broadcast</button>
                     <button type="button" onclick="closeAdminPushModal()" class="btn btn-outline">Cancel</button>
                 </div>
             </form>
@@ -341,10 +1172,16 @@
     <div id="oneSignalVerificationModal" class="modal-overlay" style="z-index:9999">
         <div class="modal-content" style="text-align:center;max-width:480px">
             <div class="modal-handle"></div>
-            <div style="width:64px;height:64px;border-radius:50%;background:rgba(6,182,212,0.15);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 0 25px var(--cyan-glow)"><i class="fas fa-bell"></i></div>
-            <h3 style="font-size:18px;font-weight:900;margin-bottom:10px">Your OneSignal SDK integration is complete!</h3>
-            <p style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6">You can now send Push Notifications & In-App Messages through OneSignal. Tap below to enable push notifications.</p>
-            <button type="button" onclick="handleOneSignalGotIt()" class="btn btn-primary btn-lg" style="width:100%"><i class="fas fa-check"></i>Got it</button>
+            <div
+                style="width:64px;height:64px;border-radius:50%;background:rgba(6,182,212,0.15);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 0 25px var(--cyan-glow)">
+                <i class="fas fa-bell"></i>
+            </div>
+            <h3 style="font-size:18px;font-weight:900;margin-bottom:10px">Your OneSignal SDK integration is complete!
+            </h3>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6">You can now send Push
+                Notifications & In-App Messages through OneSignal. Tap below to enable push notifications.</p>
+            <button type="button" onclick="handleOneSignalGotIt()" class="btn btn-primary btn-lg" style="width:100%"><i
+                    class="fas fa-check"></i>Got it</button>
         </div>
     </div>
 
@@ -374,7 +1211,7 @@
             }
 
             // 2. OneSignal Official Web SDK
-            OneSignalDeferred.push(async function(OneSignal) {
+            OneSignalDeferred.push(async function (OneSignal) {
                 try {
                     await OneSignal.init({
                         appId: ONESIGNAL_APP_ID,
@@ -384,7 +1221,7 @@
                     console.log('[OneSignal] Web SDK Initialized with App ID:', ONESIGNAL_APP_ID);
 
                     // Retained observer reference
-                    oneSignalSubscriptionObserver = function(event) {
+                    oneSignalSubscriptionObserver = function (event) {
                         const subId = OneSignal.User?.PushSubscription?.id;
                         if (subId && typeof subId === 'string' && subId.trim() !== '' && !subId.startsWith('local-')) {
                             checkAndShowOneSignalVerificationDialog(subId, false);
@@ -393,14 +1230,14 @@
 
                     if (OneSignal.User && OneSignal.User.PushSubscription) {
                         OneSignal.User.PushSubscription.addEventListener("change", oneSignalSubscriptionObserver);
-                        
+
                         // Evaluate immediately at observer-registration time
                         const currentSubId = OneSignal.User.PushSubscription.id;
                         if (currentSubId && typeof currentSubId === 'string' && currentSubId.trim() !== '' && !currentSubId.startsWith('local-')) {
                             checkAndShowOneSignalVerificationDialog(currentSubId, false);
                         }
                     }
-                } catch(err) {
+                } catch (err) {
                     console.warn('[OneSignal] Initialization note:', err);
                 }
             });
@@ -440,7 +1277,7 @@
             if (window.OneSignal) {
                 OneSignal.Notifications.requestPermission().then(granted => {
                     if (granted) showToast('Push Notifications Enabled! 🔔');
-                }).catch(() => {});
+                }).catch(() => { });
             }
         }
 
@@ -743,7 +1580,7 @@
                 listEl.innerHTML = entries.map(([id, t]) => `
                 <div class="card" style="padding:14px;display:flex;justify-content:space-between;align-items:center">
                     <div><p style="font-weight:700;font-size:13px">${t.title || 'Untitled'}</p><p style="font-size:11px;color:var(--text3)"><i class="fas fa-gamepad" style="margin-right:4px"></i>${t.game_name || 'Game'} • ${t.game_type || t.format?.type || 'Match'}</p></div>
-                    <div style="text-align:right"><span class="badge ${t.status==='Live'?'badge-live':t.status==='DRAFT'?'badge-draft':'badge-upcoming'}" style="font-size:9px">${t.status}</span><p style="font-size:11px;font-weight:800;color:var(--green);margin-top:4px">${fmt(t.prize_pool || t.prize?.total_pool)}</p></div>
+                    <div style="text-align:right"><span class="badge ${t.status === 'Live' ? 'badge-live' : t.status === 'DRAFT' ? 'badge-draft' : 'badge-upcoming'}" style="font-size:9px">${t.status}</span><p style="font-size:11px;font-weight:800;color:var(--green);margin-top:4px">${fmt(t.prize_pool || t.prize?.total_pool)}</p></div>
                 </div>`).join('');
             } catch (e) { console.error(e) }
         }
@@ -760,11 +1597,11 @@
                 <button onclick="navigateTo('adminCreateTournamentPage')" class="btn btn-primary btn-sm" style="width:auto;padding:9px 16px"><i class="fas fa-plus"></i>Create New</button>
             </div>
             <div class="tab-bar">
-                <div class="tab ${currentTournamentFilter==='All'?'active':''}" onclick="setTournamentFilter('All')">All</div>
-                <div class="tab ${currentTournamentFilter==='DRAFT'?'active':''}" onclick="setTournamentFilter('DRAFT')">📝 Drafts</div>
-                <div class="tab ${currentTournamentFilter==='Upcoming'?'active':''}" onclick="setTournamentFilter('Upcoming')">⚡ Upcoming</div>
-                <div class="tab ${currentTournamentFilter==='Live'?'active':''}" onclick="setTournamentFilter('Live')">🔴 Live</div>
-                <div class="tab ${currentTournamentFilter==='Completed'?'active':''}" onclick="setTournamentFilter('Completed')">✅ Done</div>
+                <div class="tab ${currentTournamentFilter === 'All' ? 'active' : ''}" onclick="setTournamentFilter('All')">All</div>
+                <div class="tab ${currentTournamentFilter === 'DRAFT' ? 'active' : ''}" onclick="setTournamentFilter('DRAFT')">📝 Drafts</div>
+                <div class="tab ${currentTournamentFilter === 'Upcoming' ? 'active' : ''}" onclick="setTournamentFilter('Upcoming')">⚡ Upcoming</div>
+                <div class="tab ${currentTournamentFilter === 'Live' ? 'active' : ''}" onclick="setTournamentFilter('Live')">🔴 Live</div>
+                <div class="tab ${currentTournamentFilter === 'Completed' ? 'active' : ''}" onclick="setTournamentFilter('Completed')">✅ Done</div>
             </div>
             <div id="tournaments-list-container" class="space-y"><div style="text-align:center;padding:40px"><div class="neon-spinner"></div></div></div>
             </div>`;
@@ -797,13 +1634,13 @@
                 const isDraft = t.status === 'DRAFT';
                 return `
                 <div class="card fade-up" style="padding:16px;margin-bottom:12px">
-                    ${thumb ? `<div style="width:100%;height:110px;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:12px;position:relative"><img src="${thumb}" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover"><div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(7,8,13,0.85), transparent)"></div><span class="badge ${isDraft?'badge-draft':t.status==='Live'?'badge-live':'badge-upcoming'}" style="position:absolute;top:10px;right:10px">${t.status}</span></div>` : ''}
+                    ${thumb ? `<div style="width:100%;height:110px;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:12px;position:relative"><img src="${thumb}" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover"><div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(7,8,13,0.85), transparent)"></div><span class="badge ${isDraft ? 'badge-draft' : t.status === 'Live' ? 'badge-live' : 'badge-upcoming'}" style="position:absolute;top:10px;right:10px">${t.status}</span></div>` : ''}
                     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
                         <div>
                             <p style="font-weight:800;font-size:15px">${t.title || 'Untitled Tournament'}</p>
                             <p style="font-size:11px;color:var(--text3);margin-top:2px"><i class="fas fa-gamepad" style="margin-right:4px"></i>${gameName} • <span style="color:var(--cyan)">${modeName}</span></p>
                         </div>
-                        ${!thumb ? `<span class="badge ${isDraft?'badge-draft':t.status==='Live'?'badge-live':'badge-upcoming'}">${t.status}</span>` : ''}
+                        ${!thumb ? `<span class="badge ${isDraft ? 'badge-draft' : t.status === 'Live' ? 'badge-live' : 'badge-upcoming'}">${t.status}</span>` : ''}
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;background:var(--bg4);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border3)">
                         <div><p style="font-size:9px;font-weight:700;color:var(--text4);text-transform:uppercase">Entry Fee</p><p style="font-size:13px;font-weight:800;color:var(--text)">${fee === 0 ? 'FREE' : fmt(fee)}</p></div>
@@ -834,7 +1671,7 @@
             <div style="padding:20px 20px 100px 20px" class="fade-in">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
                     <button onclick="navigateTo('adminTournamentPage')" class="btn btn-ghost btn-sm" style="color:var(--text3)"><i class="fas fa-arrow-left"></i> Back</button>
-                    <span class="badge ${wizard.status==='DRAFT'?'badge-draft':'badge-admin'}">${wizard.id ? 'EDITING: ' + (wizard.basic.title || 'DRAFT') : 'NEW TOURNAMENT'}</span>
+                    <span class="badge ${wizard.status === 'DRAFT' ? 'badge-draft' : 'badge-admin'}">${wizard.id ? 'EDITING: ' + (wizard.basic.title || 'DRAFT') : 'NEW TOURNAMENT'}</span>
                 </div>
 
         
@@ -1072,19 +1909,19 @@
                             <div>
                                 <label class="label">Platform</label>
                                 <select id="w-platform" class="input">
-                                    <option value="Mobile" ${wizard.basic.platform==='Mobile'?'selected':''}>Mobile</option>
-                                    <option value="PC" ${wizard.basic.platform==='PC'?'selected':''}>PC</option>
-                                    <option value="Console" ${wizard.basic.platform==='Console'?'selected':''}>Console</option>
-                                    <option value="Cross-Platform" ${wizard.basic.platform==='Cross-Platform'?'selected':''}>Cross-Platform</option>
+                                    <option value="Mobile" ${wizard.basic.platform === 'Mobile' ? 'selected' : ''}>Mobile</option>
+                                    <option value="PC" ${wizard.basic.platform === 'PC' ? 'selected' : ''}>PC</option>
+                                    <option value="Console" ${wizard.basic.platform === 'Console' ? 'selected' : ''}>Console</option>
+                                    <option value="Cross-Platform" ${wizard.basic.platform === 'Cross-Platform' ? 'selected' : ''}>Cross-Platform</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="label">Region</label>
                                 <select id="w-region" class="input">
-                                    <option value="South Asia (BD)" ${wizard.basic.region==='South Asia (BD)'?'selected':''}>South Asia (BD)</option>
-                                    <option value="India" ${wizard.basic.region==='India'?'selected':''}>India</option>
-                                    <option value="Global" ${wizard.basic.region==='Global'?'selected':''}>Global</option>
-                                    <option value="SEA" ${wizard.basic.region==='SEA'?'selected':''}>SEA</option>
+                                    <option value="South Asia (BD)" ${wizard.basic.region === 'South Asia (BD)' ? 'selected' : ''}>South Asia (BD)</option>
+                                    <option value="India" ${wizard.basic.region === 'India' ? 'selected' : ''}>India</option>
+                                    <option value="Global" ${wizard.basic.region === 'Global' ? 'selected' : ''}>Global</option>
+                                    <option value="SEA" ${wizard.basic.region === 'SEA' ? 'selected' : ''}>SEA</option>
                                 </select>
                             </div>
                         </div>
@@ -1098,11 +1935,11 @@
                         <div>
                             <label class="label">Select Game</label>
                             <select id="w-game-select" class="input" onchange="onGameSelected(this.value)">
-                                <option value="free_fire" ${wizard.game.game_id==='free_fire'?'selected':''}>Free Fire</option>
-                                <option value="minecraft" ${wizard.game.game_id==='minecraft'?'selected':''}>Minecraft</option>
-                                <option value="bgmi" ${wizard.game.game_id==='bgmi'?'selected':''}>BGMI / PUBG</option>
-                                <option value="valorant" ${wizard.game.game_id==='valorant'?'selected':''}>Valorant</option>
-                                <option value="custom" ${wizard.game.game_id==='custom'?'selected':''}>Custom Game</option>
+                                <option value="free_fire" ${wizard.game.game_id === 'free_fire' ? 'selected' : ''}>Free Fire</option>
+                                <option value="minecraft" ${wizard.game.game_id === 'minecraft' ? 'selected' : ''}>Minecraft</option>
+                                <option value="bgmi" ${wizard.game.game_id === 'bgmi' ? 'selected' : ''}>BGMI / PUBG</option>
+                                <option value="valorant" ${wizard.game.game_id === 'valorant' ? 'selected' : ''}>Valorant</option>
+                                <option value="custom" ${wizard.game.game_id === 'custom' ? 'selected' : ''}>Custom Game</option>
                             </select>
                         </div>
                         <div>
@@ -1127,23 +1964,23 @@
                         <div>
                             <label class="label">Format Structure</label>
                             <select id="w-format-type" class="input" onchange="wizard.format.type = this.value">
-                                <option value="Battle Royale" ${wizard.format.type==='Battle Royale'?'selected':''}>Battle Royale (Points Leaderboard)</option>
-                                <option value="Team vs Team" ${wizard.format.type==='Team vs Team'?'selected':''}>Team vs Team (Clash Squad / Match)</option>
-                                <option value="Knockout" ${wizard.format.type==='Knockout'?'selected':''}>Knockout Bracket / Elimination</option>
-                                <option value="League" ${wizard.format.type==='League'?'selected':''}>League / Group Stage</option>
-                                <option value="Custom" ${wizard.format.type==='Custom'?'selected':''}>Custom Format</option>
+                                <option value="Battle Royale" ${wizard.format.type === 'Battle Royale' ? 'selected' : ''}>Battle Royale (Points Leaderboard)</option>
+                                <option value="Team vs Team" ${wizard.format.type === 'Team vs Team' ? 'selected' : ''}>Team vs Team (Clash Squad / Match)</option>
+                                <option value="Knockout" ${wizard.format.type === 'Knockout' ? 'selected' : ''}>Knockout Bracket / Elimination</option>
+                                <option value="League" ${wizard.format.type === 'League' ? 'selected' : ''}>League / Group Stage</option>
+                                <option value="Custom" ${wizard.format.type === 'Custom' ? 'selected' : ''}>Custom Format</option>
                             </select>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                             <div>
                                 <label class="label">Match Format</label>
                                 <select id="w-match-format" class="input">
-                                    <option value="Squad" ${wizard.format.match_format==='Squad'?'selected':''}>Squad (4 Players)</option>
-                                    <option value="Duo" ${wizard.format.match_format==='Duo'?'selected':''}>Duo (2 Players)</option>
-                                    <option value="Solo" ${wizard.format.match_format==='Solo'?'selected':''}>Solo (1 Player)</option>
-                                    <option value="BO1" ${wizard.format.match_format==='BO1'?'selected':''}>Best of 1 (BO1)</option>
-                                    <option value="BO3" ${wizard.format.match_format==='BO3'?'selected':''}>Best of 3 (BO3)</option>
-                                    <option value="BO5" ${wizard.format.match_format==='BO5'?'selected':''}>Best of 5 (BO5)</option>
+                                    <option value="Squad" ${wizard.format.match_format === 'Squad' ? 'selected' : ''}>Squad (4 Players)</option>
+                                    <option value="Duo" ${wizard.format.match_format === 'Duo' ? 'selected' : ''}>Duo (2 Players)</option>
+                                    <option value="Solo" ${wizard.format.match_format === 'Solo' ? 'selected' : ''}>Solo (1 Player)</option>
+                                    <option value="BO1" ${wizard.format.match_format === 'BO1' ? 'selected' : ''}>Best of 1 (BO1)</option>
+                                    <option value="BO3" ${wizard.format.match_format === 'BO3' ? 'selected' : ''}>Best of 3 (BO3)</option>
+                                    <option value="BO5" ${wizard.format.match_format === 'BO5' ? 'selected' : ''}>Best of 5 (BO5)</option>
                                 </select>
                             </div>
                             <div>
@@ -1171,7 +2008,7 @@
                             <div><label class="label">Registration Deadline</label><input type="datetime-local" id="w-reg-deadline" value="${wizard.registration.reg_deadline}" class="input"></div>
                         </div>
                         <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg4);border-radius:var(--radius-sm);border:1px solid var(--border3)">
-                            <input type="checkbox" id="w-auto-close" ${wizard.registration.auto_close?'checked':''} style="width:18px;height:18px;accent-color:var(--violet)">
+                            <input type="checkbox" id="w-auto-close" ${wizard.registration.auto_close ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--violet)">
                             <label for="w-auto-close" style="font-size:12px;font-weight:600">Auto-close registration when full or deadline passes</label>
                         </div>
                     </div>`;
@@ -1186,16 +2023,16 @@
                             <div><label class="label">Max Players Per Team</label><input type="number" id="w-max-ts" value="${wizard.team_config.max_team_size}" min="1" class="input"></div>
                         </div>
                         <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg4);border-radius:var(--radius-sm);border:1px solid var(--border3)">
-                            <input type="checkbox" id="w-sub-allow" ${wizard.team_config.substitutes_allowed?'checked':''} style="width:18px;height:18px;accent-color:var(--violet)">
+                            <input type="checkbox" id="w-sub-allow" ${wizard.team_config.substitutes_allowed ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--violet)">
                             <label for="w-sub-allow" style="font-size:12px;font-weight:600">Allow Substitutes / Reserve Players</label>
                         </div>
                         <div><label class="label">Max Substitutes Count</label><input type="number" id="w-max-subs" value="${wizard.team_config.max_substitutes}" min="0" max="4" class="input"></div>
                         <div class="card" style="background:var(--bg4);padding:14px">
                             <p style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Required Player Form Fields</p>
                             <div style="display:flex;flex-direction:column;gap:8px">
-                                <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="w-req-ign" ${wizard.team_config.require_in_game_name?'checked':''} style="accent-color:var(--violet)"> In-Game Name (IGN)</label>
-                                <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="w-req-guid" ${wizard.team_config.require_game_uid?'checked':''} style="accent-color:var(--violet)"> In-Game Character UID</label>
-                                <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="w-req-tname" ${wizard.team_config.require_team_name?'checked':''} style="accent-color:var(--violet)"> Team / Clan Name</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="w-req-ign" ${wizard.team_config.require_in_game_name ? 'checked' : ''} style="accent-color:var(--violet)"> In-Game Name (IGN)</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="w-req-guid" ${wizard.team_config.require_game_uid ? 'checked' : ''} style="accent-color:var(--violet)"> In-Game Character UID</label>
+                                <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="w-req-tname" ${wizard.team_config.require_team_name ? 'checked' : ''} style="accent-color:var(--violet)"> Team / Clan Name</label>
                             </div>
                         </div>
                     </div>`;
@@ -1253,14 +2090,14 @@
                         </div>
 
                         <!-- Live Prize Pool Balance Meter -->
-                        <div class="card" style="background:var(--bg4);border:1px solid ${isOver?'var(--red)':'var(--border)'};padding:14px">
+                        <div class="card" style="background:var(--bg4);border:1px solid ${isOver ? 'var(--red)' : 'var(--border)'};padding:14px">
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
                                 <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase">Allocation Status</span>
-                                <span style="font-size:12px;font-weight:800;color:${isOver?'var(--red)':'var(--green)'}">${isOver?'⚠️ OVER-ALLOCATED':'✓ BALANCED'}</span>
+                                <span style="font-size:12px;font-weight:800;color:${isOver ? 'var(--red)' : 'var(--green)'}">${isOver ? '⚠️ OVER-ALLOCATED' : '✓ BALANCED'}</span>
                             </div>
                             <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
                                 <span>Allocated: <strong id="prize-alloc-txt">${fmt(allocated)}</strong></span>
-                                <span>Remaining: <strong id="prize-rem-txt" style="color:${isOver?'var(--red)':'var(--cyan)'}">${fmt(remaining)}</strong></span>
+                                <span>Remaining: <strong id="prize-rem-txt" style="color:${isOver ? 'var(--red)' : 'var(--cyan)'}">${fmt(remaining)}</strong></span>
                             </div>
                             ${isOver ? `<p style="font-size:11px;color:var(--red);margin-top:6px"><i class="fas fa-exclamation-triangle"></i> Allocated rewards exceed total prize pool! Please adjust before publishing.</p>` : ''}
                         </div>
@@ -1329,18 +2166,18 @@
                     <div class="space-y">
                         <div class="section-title" style="margin-bottom:8px"><span>11. Validation & Publish</span><span class="badge badge-admin">Step 11/11</span></div>
                         <p style="font-size:12px;color:var(--text3);margin-bottom:14px">System validation check before making tournament live.</p>
-                        <div class="card" style="background:var(--bg4);padding:16px;border:1px solid ${valReport.isValid?'var(--border)':'var(--red)'}">
+                        <div class="card" style="background:var(--bg4);padding:16px;border:1px solid ${valReport.isValid ? 'var(--border)' : 'var(--red)'}">
                             <h4 style="font-size:14px;font-weight:800;margin-bottom:10px"><i class="fas fa-clipboard-check" style="color:var(--cyan);margin-right:6px"></i>Validation Checklist</h4>
                             <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
-                                <div style="display:flex;align-items:center;justify-content:space-between"><span>Tournament Name</span><span style="color:${wizard.basic.title?'var(--green)':'var(--red)'}">${wizard.basic.title?'✓ Valid':'✗ Missing'}</span></div>
+                                <div style="display:flex;align-items:center;justify-content:space-between"><span>Tournament Name</span><span style="color:${wizard.basic.title ? 'var(--green)' : 'var(--red)'}">${wizard.basic.title ? '✓ Valid' : '✗ Missing'}</span></div>
                                 <div style="display:flex;align-items:center;justify-content:space-between"><span>Game & Mode</span><span style="color:var(--green)">✓ Selected</span></div>
-                                <div style="display:flex;align-items:center;justify-content:space-between"><span>Prize Distribution Balance</span><span style="color:${valReport.isPrizeValid?'var(--green)':'var(--red)'}">${valReport.isPrizeValid?'✓ Balanced':'✗ Exceeds Pool'}</span></div>
-                                <div style="display:flex;align-items:center;justify-content:space-between"><span>Match Time</span><span style="color:${wizard.schedule.match_time?'var(--green)':'var(--yellow)'}">${wizard.schedule.match_time?'✓ Set':'⚠️ Recommended'}</span></div>
+                                <div style="display:flex;align-items:center;justify-content:space-between"><span>Prize Distribution Balance</span><span style="color:${valReport.isPrizeValid ? 'var(--green)' : 'var(--red)'}">${valReport.isPrizeValid ? '✓ Balanced' : '✗ Exceeds Pool'}</span></div>
+                                <div style="display:flex;align-items:center;justify-content:space-between"><span>Match Time</span><span style="color:${wizard.schedule.match_time ? 'var(--green)' : 'var(--yellow)'}">${wizard.schedule.match_time ? '✓ Set' : '⚠️ Recommended'}</span></div>
                             </div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
                             <button onclick="saveDraft()" class="btn btn-outline"><i class="fas fa-save"></i>Save as Draft</button>
-                            <button onclick="publishTournament()" class="btn btn-success" ${valReport.isValid?'':'disabled'}><i class="fas fa-rocket"></i>Publish Live</button>
+                            <button onclick="publishTournament()" class="btn btn-success" ${valReport.isValid ? '' : 'disabled'}><i class="fas fa-rocket"></i>Publish Live</button>
                         </div>
                     </div>`;
             }
@@ -1349,7 +2186,7 @@
         function renderModeOptionsForGame(gameId) {
             const modes = Object.values(DEFAULT_MODES).filter(m => m.game_id === gameId);
             if (!modes.length) return `<option value="custom">Standard Match</option>`;
-            return modes.map(m => `<option value="${m.id}" ${wizard.game.mode_id===m.id?'selected':''}>${m.name}</option>`).join('');
+            return modes.map(m => `<option value="${m.id}" ${wizard.game.mode_id === m.id ? 'selected' : ''}>${m.name}</option>`).join('');
         }
 
         function onGameSelected(gid) {
@@ -1710,7 +2547,7 @@
                     pHtml += `<div class="card" style="padding:12px;margin-bottom:8px">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
                         <span style="font-weight:700;font-size:13px">${u.username}</span>
-                        <span class="badge ${parts[pId].status==='Winner'?'badge-admin':'badge-pending'}" style="font-size:8px">${parts[pId].status==='Winner'?'👑 Winner':'Active'}</span>
+                        <span class="badge ${parts[pId].status === 'Winner' ? 'badge-admin' : 'badge-pending'}" style="font-size:8px">${parts[pId].status === 'Winner' ? '👑 Winner' : 'Active'}</span>
                     </div>
                     <p style="font-size:11px;color:var(--text3)"><i class="fas fa-user" style="margin-right:4px"></i>${parts[pId].game_name || 'N/A'} • UID: ${parts[pId].game_uid || 'N/A'}${parts[pId].team_name ? ' • <span style="color:var(--cyan)">Team: ' + parts[pId].team_name + '</span>' : ''}</p>
                     </div>`;
@@ -1723,9 +2560,9 @@
             <div class="card fade-up stagger-1" style="margin-bottom:12px">
                 <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-door-open" style="color:var(--cyan)"></i>Room & Match Status</h3>
                 <form id="roomDetailsForm" class="space-y">
-                    <div><label class="label">Room ID</label><input type="text" id="t-roomid" value="${t.room_id||''}" placeholder="Enter Room ID" class="input"></div>
-                    <div><label class="label">Room Password</label><input type="text" id="t-roompass" value="${t.room_password||''}" placeholder="Enter Password" class="input"></div>
-                    <div><label class="label">Status</label><select id="t-status" class="input"><option value="Upcoming" ${t.status==='Upcoming'?'selected':''}>Upcoming</option><option value="Live" ${t.status==='Live'?'selected':''}>Live</option><option value="Completed" ${t.status==='Completed'?'selected':''}>Completed</option></select></div>
+                    <div><label class="label">Room ID</label><input type="text" id="t-roomid" value="${t.room_id || ''}" placeholder="Enter Room ID" class="input"></div>
+                    <div><label class="label">Room Password</label><input type="text" id="t-roompass" value="${t.room_password || ''}" placeholder="Enter Password" class="input"></div>
+                    <div><label class="label">Status</label><select id="t-status" class="input"><option value="Upcoming" ${t.status === 'Upcoming' ? 'selected' : ''}>Upcoming</option><option value="Live" ${t.status === 'Live' ? 'selected' : ''}>Live</option><option value="Completed" ${t.status === 'Completed' ? 'selected' : ''}>Completed</option></select></div>
                     <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i>Update Room & Status</button>
                 </form>
             </div>
@@ -1752,7 +2589,7 @@
         async function renderPayments(c) {
             c.innerHTML = `<div style="padding:20px" class="fade-in">
             <div class="section-title"><i class="fas fa-credit-card" style="color:var(--cyan)"></i>Payments & Gateway</div>
-            <div class="tab-bar"><div id="tab-w" class="tab ${curPaymentTab==='withdrawals'?'active':''}" onclick="switchPayTab('withdrawals')">Withdrawals</div><div id="tab-d" class="tab ${curPaymentTab==='deposits'?'active':''}" onclick="switchPayTab('deposits')">Deposits</div></div>
+            <div class="tab-bar"><div id="tab-w" class="tab ${curPaymentTab === 'withdrawals' ? 'active' : ''}" onclick="switchPayTab('withdrawals')">Withdrawals</div><div id="tab-d" class="tab ${curPaymentTab === 'deposits' ? 'active' : ''}" onclick="switchPayTab('deposits')">Deposits</div></div>
             <div id="pay-content"><div style="text-align:center;padding:40px"><div class="neon-spinner"></div></div></div>
             </div>`;
             loadPaymentTabContent();
@@ -1787,7 +2624,7 @@
                 <div class="card fade-up" style="margin-bottom:10px;padding:14px">
                     <div style="display:flex;justify-content:space-between;align-items:center">
                         <div><p style="font-weight:700;font-size:13px">${d.username || d.user_id || 'User'}</p><p style="font-size:10px;color:var(--text4)">Invoice: ${d.invoice_id || 'N/A'}</p></div>
-                        <div style="text-align:right"><p style="font-size:14px;font-weight:900;color:var(--green)">${fmt(d.amount)}</p><span class="badge ${d.status==='completed'?'badge-approved':'badge-pending'}" style="font-size:8px">${d.status}</span></div>
+                        <div style="text-align:right"><p style="font-size:14px;font-weight:900;color:var(--green)">${fmt(d.amount)}</p><span class="badge ${d.status === 'completed' ? 'badge-approved' : 'badge-pending'}" style="font-size:8px">${d.status}</span></div>
                     </div>
                 </div>`).join('');
             }
@@ -1808,31 +2645,31 @@
             const us = snap.val() || {};
             el.innerHTML = Object.entries(us).map(([uid, u]) => {
                 const isMod = u.role === 'moderator';
-                const roleBadge = u.role === 'admin' 
-                    ? '<span class="badge badge-admin" style="font-size:8px;margin-left:4px">👑 Admin</span>' 
-                    : isMod 
-                    ? '<span class="badge" style="font-size:8px;margin-left:4px;background:var(--cyan-glow);color:var(--cyan);border:1px solid rgba(6,182,212,0.4)">🛡️ Moderator</span>' 
-                    : '<span class="badge" style="font-size:8px;margin-left:4px;background:rgba(255,255,255,0.06);color:var(--text3)">Player</span>';
-                
+                const roleBadge = u.role === 'admin'
+                    ? '<span class="badge badge-admin" style="font-size:8px;margin-left:4px">👑 Admin</span>'
+                    : isMod
+                        ? '<span class="badge" style="font-size:8px;margin-left:4px;background:var(--cyan-glow);color:var(--cyan);border:1px solid rgba(6,182,212,0.4)">🛡️ Moderator</span>'
+                        : '<span class="badge" style="font-size:8px;margin-left:4px;background:rgba(255,255,255,0.06);color:var(--text3)">Player</span>';
+
                 return `
                 <div class="card fade-up" style="padding:16px;margin-bottom:10px">
                     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
                         <div>
                             <p style="font-weight:700;font-size:14px">${u.username || 'User'} ${roleBadge}</p>
                             <p style="font-size:11px;color:var(--text4);margin-top:2px">${u.email || 'No email'}</p>
-                            <p style="font-size:10px;color:var(--text3);margin-top:2px">UID: <code style="font-family:monospace">${uid.slice(0,10)}...</code></p>
+                            <p style="font-size:10px;color:var(--text3);margin-top:2px">UID: <code style="font-family:monospace">${uid.slice(0, 10)}...</code></p>
                         </div>
                         <div style="text-align:right">
-                            <p style="font-size:15px;font-weight:900;color:var(--green)">${fmt(u.wallet_balance||0)}</p>
+                            <p style="font-size:15px;font-weight:900;color:var(--green)">${fmt(u.wallet_balance || 0)}</p>
                             <span class="badge" style="background:rgba(139,92,246,0.12);color:var(--violet);font-size:9px;margin-top:4px">🎟️ ${u.free_passes || 0} Passes</span>
                         </div>
                     </div>
                     <div style="display:grid;grid-template-columns:${isMod ? '1fr 1fr 1fr 1fr 1fr' : '1fr 1fr 1fr 1fr'};gap:6px;margin-top:10px">
-                        <button onclick="changeUserRole('${uid}','${u.username||'User'}','${u.role||'user'}')" class="btn btn-warning btn-sm" title="Change Role"><i class="fas fa-user-shield"></i>Role</button>
-                        ${isMod ? `<button onclick="openModPermissionsModal('${uid}','${u.username||'Moderator'}','${u.email||''}')" class="btn btn-primary btn-sm" style="background:var(--cyan);color:#07080D;font-weight:800" title="Configure Moderator Access"><i class="fas fa-key"></i>Perms</button>` : ''}
-                        <button onclick="addMoneyToUser('${uid}','${u.username||'User'}')" class="btn btn-secondary btn-sm" title="Add Funds"><i class="fas fa-plus"></i>+৳</button>
-                        <button onclick="deductMoneyFromUser('${uid}','${u.username||'User'}')" class="btn btn-outline btn-sm" title="Deduct Funds"><i class="fas fa-minus"></i>-৳</button>
-                        <button onclick="manageUserPasses('${uid}','${u.username||'User'}',${u.free_passes||0})" class="btn btn-primary btn-sm" title="Tournament Passes"><i class="fas fa-ticket-alt"></i>Passes</button>
+                        <button onclick="changeUserRole('${uid}','${u.username || 'User'}','${u.role || 'user'}')" class="btn btn-warning btn-sm" title="Change Role"><i class="fas fa-user-shield"></i>Role</button>
+                        ${isMod ? `<button onclick="openModPermissionsModal('${uid}','${u.username || 'Moderator'}','${u.email || ''}')" class="btn btn-primary btn-sm" style="background:var(--cyan);color:#07080D;font-weight:800" title="Configure Moderator Access"><i class="fas fa-key"></i>Perms</button>` : ''}
+                        <button onclick="addMoneyToUser('${uid}','${u.username || 'User'}')" class="btn btn-secondary btn-sm" title="Add Funds"><i class="fas fa-plus"></i>+৳</button>
+                        <button onclick="deductMoneyFromUser('${uid}','${u.username || 'User'}')" class="btn btn-outline btn-sm" title="Deduct Funds"><i class="fas fa-minus"></i>-৳</button>
+                        <button onclick="manageUserPasses('${uid}','${u.username || 'User'}',${u.free_passes || 0})" class="btn btn-primary btn-sm" title="Tournament Passes"><i class="fas fa-ticket-alt"></i>Passes</button>
                     </div>
                 </div>`;
             }).join('');
@@ -1892,7 +2729,7 @@
             <div class="card fade-up stagger-2" style="margin-bottom:16px">
                 <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-image" style="color:var(--cyan)"></i>Home Banner Settings</h3>
                 <form id="bannerSettingsForm" class="space-y">
-                    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg4);border-radius:var(--radius-sm)"><input type="checkbox" id="banner-enabled" ${bd.enabled?'checked':''} style="accent-color:var(--violet)"><label for="banner-enabled" style="font-size:12px;font-weight:600">Enable Banner</label></div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg4);border-radius:var(--radius-sm)"><input type="checkbox" id="banner-enabled" ${bd.enabled ? 'checked' : ''} style="accent-color:var(--violet)"><label for="banner-enabled" style="font-size:12px;font-weight:600">Enable Banner</label></div>
                     <div><label class="label">Banner Title</label><input type="text" id="banner-title" value="${bd.title}" class="input" required></div>
                     <div><label class="label">Banner Subtitle</label><input type="text" id="banner-subtitle" value="${bd.subtitle}" class="input" required></div>
                     <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i>Save Banner</button>
@@ -1906,10 +2743,10 @@
                     <span class="badge ${refConfig.enabled ? 'badge-approved' : 'badge-draft'}">${refConfig.enabled ? 'Active' : 'Disabled'}</span>
                 </div>
                 <form id="referralConfigForm" class="space-y">
-                    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg4);border-radius:var(--radius-sm)"><input type="checkbox" id="ref-enabled" ${refConfig.enabled?'checked':''} style="accent-color:var(--violet)"><label for="ref-enabled" style="font-size:12px;font-weight:600">Enable Referral System</label></div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg4);border-radius:var(--radius-sm)"><input type="checkbox" id="ref-enabled" ${refConfig.enabled ? 'checked' : ''} style="accent-color:var(--violet)"><label for="ref-enabled" style="font-size:12px;font-weight:600">Enable Referral System</label></div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                        <div><label class="label">Default Invites</label><input type="number" id="ref-def-invites" value="${refConfig.default_invite_milestone||5}" class="input" min="1" required></div>
-                        <div><label class="label">Default Reward</label><input type="text" id="ref-def-label" value="${refConfig.default_reward_label||'1 Free Tournament Entry Pass'}" class="input" required></div>
+                        <div><label class="label">Default Invites</label><input type="number" id="ref-def-invites" value="${refConfig.default_invite_milestone || 5}" class="input" min="1" required></div>
+                        <div><label class="label">Default Reward</label><input type="text" id="ref-def-label" value="${refConfig.default_reward_label || '1 Free Tournament Entry Pass'}" class="input" required></div>
                     </div>
                     
                     <div class="divider"></div>
@@ -1966,7 +2803,7 @@
                 const enabled = document.getElementById('ref-enabled').checked;
                 const defInvites = Number(document.getElementById('ref-def-invites').value) || 5;
                 const defLabel = document.getElementById('ref-def-label').value.trim();
-                
+
                 await db.ref('app_settings/referral_plans').set({
                     enabled,
                     default_invite_milestone: defInvites,
@@ -1988,7 +2825,7 @@
             container.innerHTML = tempReferralTiers.map((t, idx) => `
             <div class="card" style="padding:12px;border:1px solid var(--border3);background:var(--bg4)">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                    <span style="font-size:11px;font-weight:700;color:var(--cyan)">Tier #${idx+1} (${t.invites} Invites)</span>
+                    <span style="font-size:11px;font-weight:700;color:var(--cyan)">Tier #${idx + 1} (${t.invites} Invites)</span>
                     <button type="button" onclick="removeReferralTier(${idx})" class="btn btn-ghost btn-sm" style="color:var(--red);padding:2px 6px"><i class="fas fa-trash"></i></button>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">
@@ -1999,20 +2836,20 @@
                     <div>
                         <label class="label" style="font-size:9px">Reward Type</label>
                         <select class="input" style="padding:8px;font-size:12px" onchange="tempReferralTiers[${idx}].reward_type = this.value">
-                            <option value="free_pass" ${t.reward_type==='free_pass'?'selected':''}>🎟️ Free Tournament Pass</option>
-                            <option value="coins" ${t.reward_type==='coins'?'selected':''}>💰 Bonus Cash (৳)</option>
-                            <option value="coins_and_badge" ${t.reward_type==='coins_and_badge'?'selected':''}>👑 Cash + VIP Badge</option>
+                            <option value="free_pass" ${t.reward_type === 'free_pass' ? 'selected' : ''}>🎟️ Free Tournament Pass</option>
+                            <option value="coins" ${t.reward_type === 'coins' ? 'selected' : ''}>💰 Bonus Cash (৳)</option>
+                            <option value="coins_and_badge" ${t.reward_type === 'coins_and_badge' ? 'selected' : ''}>👑 Cash + VIP Badge</option>
                         </select>
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px">
                     <div>
                         <label class="label" style="font-size:9px">Value (৳ or Passes)</label>
-                        <input type="number" class="input" style="padding:8px;font-size:12px" value="${t.reward_value||1}" min="1" onchange="tempReferralTiers[${idx}].reward_value = Number(this.value)">
+                        <input type="number" class="input" style="padding:8px;font-size:12px" value="${t.reward_value || 1}" min="1" onchange="tempReferralTiers[${idx}].reward_value = Number(this.value)">
                     </div>
                     <div>
                         <label class="label" style="font-size:9px">Reward Label</label>
-                        <input type="text" class="input" style="padding:8px;font-size:12px" value="${t.reward_label||''}" onchange="tempReferralTiers[${idx}].reward_label = this.value">
+                        <input type="text" class="input" style="padding:8px;font-size:12px" value="${t.reward_label || ''}" onchange="tempReferralTiers[${idx}].reward_label = this.value">
                     </div>
                 </div>
             </div>`).join('');
@@ -2200,14 +3037,14 @@
             document.getElementById('edit-t-slots').value = t.max_participants || t.slots || 48;
             document.getElementById('edit-t-fee').value = t.entry_fee || 0;
             document.getElementById('edit-t-prize').value = t.prize_pool || t.prize?.total_pool || 0;
-            
+
             // Format match time for datetime-local
             if (t.match_time) {
                 try {
                     const dt = new Date(t.match_time);
                     const iso = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                     document.getElementById('edit-t-time').value = iso;
-                } catch(e) { document.getElementById('edit-t-time').value = ''; }
+                } catch (e) { document.getElementById('edit-t-time').value = ''; }
             } else {
                 document.getElementById('edit-t-time').value = '';
             }
@@ -2342,15 +3179,15 @@
         async function addMoneyToUser(uid, name) {
             const a = prompt(`Amount to add to ${name}'s wallet (৳):`); if (!a || isNaN(a) || Number(a) <= 0) return showToast('Invalid amount!', true);
             const u = (await db.ref(`users/${uid}`).once('value')).val();
-            await db.ref().update({ [`/users/${uid}/wallet_balance`]: (u.wallet_balance||0)+Number(a), [`/transactions/${uid}/${db.ref().child('transactions').push().key}`]: { amount: Number(a), type: 'credit', description: 'Added by admin', created_at: new Date().toISOString() } });
+            await db.ref().update({ [`/users/${uid}/wallet_balance`]: (u.wallet_balance || 0) + Number(a), [`/transactions/${uid}/${db.ref().child('transactions').push().key}`]: { amount: Number(a), type: 'credit', description: 'Added by admin', created_at: new Date().toISOString() } });
             showToast(`Added ${fmt(a)}! 💸`); renderUsers(document.getElementById('adminUsersPage'));
         }
 
         async function deductMoneyFromUser(uid, name) {
             const a = prompt(`Amount to deduct from ${name} (৳):`); if (!a || isNaN(a) || Number(a) <= 0) return showToast('Invalid amount!', true);
             const u = (await db.ref(`users/${uid}`).once('value')).val();
-            if ((u.wallet_balance||0) < Number(a)) return showToast('Insufficient balance!', true);
-            await db.ref().update({ [`/users/${uid}/wallet_balance`]: (u.wallet_balance||0)-Number(a), [`/transactions/${uid}/${db.ref().child('transactions').push().key}`]: { amount: Number(a), type: 'debit', description: 'Deducted by admin', created_at: new Date().toISOString() } });
+            if ((u.wallet_balance || 0) < Number(a)) return showToast('Insufficient balance!', true);
+            await db.ref().update({ [`/users/${uid}/wallet_balance`]: (u.wallet_balance || 0) - Number(a), [`/transactions/${uid}/${db.ref().child('transactions').push().key}`]: { amount: Number(a), type: 'debit', description: 'Deducted by admin', created_at: new Date().toISOString() } });
             showToast(`Deducted ${fmt(a)}`); renderUsers(document.getElementById('adminUsersPage'));
         }
 
