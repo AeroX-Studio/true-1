@@ -1709,25 +1709,18 @@
         }
 
         async function dispatchModPushBackend(payload) {
-            try {
-                const sendPushFn = firebase.app().functions('asia-southeast1').httpsCallable('sendOneSignalNotification');
-                const res = await sendPushFn(payload);
-                return res.data;
-            } catch (cfErr) {
-                console.warn('[Cloud Function fallback to /api/send-notification]:', cfErr.message);
-                const token = await auth.currentUser.getIdToken();
-                const res = await fetch('/api/send-notification', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(payload)
-                });
-                const d = await res.json();
-                if (!res.ok) throw new Error(d.error || 'Notification dispatch failed');
-                return d;
-            }
+            const token = await auth.currentUser.getIdToken();
+            const res = await fetch('/api/send-notification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+            const d = await res.json().catch(() => ({ error: 'Unknown server response' }));
+            if (!res.ok) throw new Error(d.error || 'Notification dispatch failed');
+            return d;
         }
 
         async function handleModPushSubmit(e) {
@@ -2501,6 +2494,12 @@
         }
 
         function editModDraft(tid) {
+            currentDraftId = tid;
+            navTo('modCreateTournamentPage', { draftId: tid, preserve: true });
+        }
+
+        function openModEdit(tid) {
+            currentDraftId = tid;
             navTo('modCreateTournamentPage', { draftId: tid, preserve: true });
         }
 
