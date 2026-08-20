@@ -837,6 +837,21 @@
                     <span class="badge ${wizard.status==='DRAFT'?'badge-draft':'badge-admin'}">${wizard.id ? 'EDITING: ' + (wizard.basic.title || 'DRAFT') : 'NEW TOURNAMENT'}</span>
                 </div>
 
+        
+                <!-- Quick Presets Bar -->
+                <div class="card" style="padding:10px 12px;margin-bottom:14px;background:var(--bg4);border:1px solid var(--border3)">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                        <span style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase"><i class="fas fa-magic" style="margin-right:4px"></i>Quick Esports Presets</span>
+                        <span style="font-size:9px;color:var(--text4)">1-Click Load</span>
+                    </div>
+                    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">
+                        <button type="button" onclick="applyWizardPreset('ff_squad')" class="btn btn-secondary btn-sm" style="width:auto;padding:5px 9px;font-size:10px;white-space:nowrap">🔥 FF Squad (৳100)</button>
+                        <button type="button" onclick="applyWizardPreset('ff_cs')" class="btn btn-secondary btn-sm" style="width:auto;padding:5px 9px;font-size:10px;white-space:nowrap">⚔️ Clash Squad 4v4</button>
+                        <button type="button" onclick="applyWizardPreset('ff_1v1')" class="btn btn-secondary btn-sm" style="width:auto;padding:5px 9px;font-size:10px;white-space:nowrap">🎯 Lone Wolf 1v1</button>
+                        <button type="button" onclick="applyWizardPreset('bgmi_squad')" class="btn btn-secondary btn-sm" style="width:auto;padding:5px 9px;font-size:10px;white-space:nowrap">🏆 BGMI Erangel</button>
+                    </div>
+                </div>
+
                 <!-- Stepper Progress Header -->
                 <div class="stepper-header">
                     <div class="stepper-progress"><div id="wizard-progress-bar" class="stepper-progress-bar" style="width:${(wizard.step / 11) * 100}%"></div></div>
@@ -859,6 +874,107 @@
             </div>`;
 
             attachStepEventHandlers();
+        }
+
+        function applyWizardPreset(presetKey) {
+            const now = new Date();
+            const startIso = new Date(now.getTime() + 3 * 3600 * 1000 - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            const regStartIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            const regDeadlineIso = new Date(now.getTime() + 2.5 * 3600 * 1000 - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+            if (presetKey === 'ff_squad') {
+                wizard.basic.title = '🔥 Free Fire Squad Showdown #01';
+                wizard.basic.short_desc = '48-Slot Battle Royale Squad Tournament';
+                wizard.basic.platform = 'Mobile';
+                wizard.game.game_id = 'free_fire';
+                wizard.game.game_name = 'Free Fire';
+                wizard.game.mode_id = 'ff_br';
+                wizard.game.mode_name = 'Battle Royale (BR)';
+                wizard.format.type = 'Battle Royale';
+                wizard.format.match_format = 'Squad';
+                wizard.format.team_size = 4;
+                wizard.registration.entry_fee = 20;
+                wizard.registration.max_teams = 12;
+                wizard.registration.max_players = 48;
+                wizard.prize.total_pool = 100;
+                wizard.prize.first_place = 60;
+                wizard.prize.second_place = 30;
+                wizard.prize.third_place = 10;
+                wizard.prize.mvp_reward = 0;
+                wizard.prize.kill_reward_rate = 0;
+                wizard.prize.kill_reward_budget = 0;
+            } else if (presetKey === 'ff_cs') {
+                wizard.basic.title = '⚔️ Free Fire Clash Squad 4v4 War';
+                wizard.basic.short_desc = 'High-stakes 4v4 Clash Squad BO3 Match';
+                wizard.basic.platform = 'Mobile';
+                wizard.game.game_id = 'free_fire';
+                wizard.game.game_name = 'Free Fire';
+                wizard.game.mode_id = 'ff_cs';
+                wizard.game.mode_name = 'Clash Squad (CS)';
+                wizard.format.type = 'Team vs Team';
+                wizard.format.match_format = 'BO3';
+                wizard.format.team_size = 4;
+                wizard.registration.entry_fee = 50;
+                wizard.registration.max_teams = 2;
+                wizard.registration.max_players = 8;
+                wizard.prize.total_pool = 200;
+                wizard.prize.first_place = 160;
+                wizard.prize.second_place = 40;
+                wizard.prize.third_place = 0;
+                wizard.prize.mvp_reward = 0;
+                wizard.prize.kill_reward_rate = 0;
+                wizard.prize.kill_reward_budget = 0;
+            } else if (presetKey === 'ff_1v1') {
+                wizard.basic.title = '🎯 Free Fire Lone Wolf 1v1 Duel';
+                wizard.basic.short_desc = '1v1 Head-to-Head Aim Duel';
+                wizard.basic.platform = 'Mobile';
+                wizard.game.game_id = 'free_fire';
+                wizard.game.game_name = 'Free Fire';
+                wizard.game.mode_id = 'ff_cs';
+                wizard.game.mode_name = 'Lone Wolf 1v1';
+                wizard.format.type = 'Knockout';
+                wizard.format.match_format = 'BO5';
+                wizard.format.team_size = 1;
+                wizard.registration.entry_fee = 10;
+                wizard.registration.max_teams = 2;
+                wizard.registration.max_players = 2;
+                wizard.prize.total_pool = 50;
+                wizard.prize.first_place = 40;
+                wizard.prize.second_place = 10;
+                wizard.prize.third_place = 0;
+                wizard.prize.mvp_reward = 0;
+                wizard.prize.kill_reward_rate = 0;
+                wizard.prize.kill_reward_budget = 0;
+            } else if (presetKey === 'bgmi_squad') {
+                wizard.basic.title = '🏆 BGMI Erangel Squad Championship';
+                wizard.basic.short_desc = '25 Squads 100-Player Classic Battle';
+                wizard.basic.platform = 'Mobile';
+                wizard.game.game_id = 'bgmi';
+                wizard.game.game_name = 'BGMI / PUBG';
+                wizard.game.mode_id = 'bgmi_br';
+                wizard.game.mode_name = 'Classic Battle Royale';
+                wizard.format.type = 'Battle Royale';
+                wizard.format.match_format = 'Squad';
+                wizard.format.team_size = 4;
+                wizard.registration.entry_fee = 100;
+                wizard.registration.max_teams = 25;
+                wizard.registration.max_players = 100;
+                wizard.prize.total_pool = 500;
+                wizard.prize.first_place = 300;
+                wizard.prize.second_place = 150;
+                wizard.prize.third_place = 50;
+                wizard.prize.mvp_reward = 0;
+                wizard.prize.kill_reward_rate = 0;
+                wizard.prize.kill_reward_budget = 0;
+            }
+
+            wizard.schedule.match_time = startIso;
+            wizard.schedule.tournament_start = startIso;
+            wizard.registration.reg_start = regStartIso;
+            wizard.registration.reg_deadline = regDeadlineIso;
+
+            showToast('Preset Template Loaded! ⚡');
+            updateWizardView();
         }
 
         function renderStepperPills() {
