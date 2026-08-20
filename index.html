@@ -3499,6 +3499,25 @@
                     </div>
                 </div>
 
+                <!-- Live Tournament Chat Card -->
+                <div class="card fade-up stagger-4" style="margin-bottom:16px;border:1px solid var(--border)">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                        <p style="font-size:13px;font-weight:800;color:var(--cyan);margin:0"><i class="fas fa-comments" style="margin-right:6px"></i>Live Match Chat</p>
+                        <span class="badge badge-live" style="font-size:8px"><span class="live-dot"></span>LIVE</span>
+                    </div>
+                    
+                    <div id="matchChatMessages" style="max-height:220px;min-height:140px;overflow-y:auto;background:var(--bg2);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border3);margin-bottom:10px">
+                        <div style="text-align:center;padding:20px"><div class="neon-spinner" style="width:24px;height:24px"></div></div>
+                    </div>
+
+                    <div id="matchChatMutedAlert" class="info-box" style="display:none;margin-bottom:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);font-size:11.5px"></div>
+
+                    <form id="matchChatForm" style="display:flex;gap:6px">
+                        <input type="text" id="matchChatInput" placeholder="Send a message to match chat..." class="input" style="padding:10px 12px;font-size:12px" required maxlength="250">
+                        <button type="submit" class="btn btn-primary btn-sm" style="width:auto;padding:10px 16px"><i class="fas fa-paper-plane"></i></button>
+                    </form>
+                </div>
+
                 <!-- Submit Result CTA -->
                 <button onclick="navigateTo('resultPage')" class="btn btn-outline fade-up stagger-5"><i class="fas fa-camera"></i>Submit Match Result / Screenshot</button>
             </div>`;
@@ -3506,6 +3525,105 @@
             if (document.getElementById('matchCountdown')) {
                 const mc = setInterval(() => { if (!document.getElementById('matchCountdown')) { clearInterval(mc); return } updateCountdown(t.match_time, 'matchCountdown') }, 1000);
                 updateCountdown(t.match_time, 'matchCountdown');
+            }
+
+            initMatchChat(detailTid);
+        }
+
+        let activeMatchChatTid = null;
+        async function initMatchChat(tid) {
+            const container = document.getElementById('matchChatMessages');
+            const form = document.getElementById('matchChatForm');
+            const input = document.getElementById('matchChatInput');
+            const muteAlert = document.getElementById('matchChatMutedAlert');
+            if (!container || !tid) return;
+
+            // Check if user is muted by moderator
+            let isMuted = false;
+            let muteReason = '';
+            if (U) {
+                try {
+                    const muteSnap = await db.ref(`muted_users/${U.uid}`).once('value');
+                    const m = muteSnap.val();
+                    if (m) {
+                        if (m.muted_until === 'permanent') {
+                            isMuted = true;
+                            muteReason = m.reason || 'Permanent chat timeout';
+                        } else if (new Date(m.muted_until) > new Date()) {
+                            isMuted = true;
+                            muteReason = `${m.reason || 'Rule infraction'} (Until ${new Date(m.muted_until).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})})`;
+                        }
+                    }
+                } catch(e) {}
+            }
+
+            if (isMuted) {
+                if (form) form.style.display = 'none';
+                if (muteAlert) {
+                    muteAlert.style.display = 'block';
+                    muteAlert.innerHTML = `<i class="fas fa-volume-mute" style="color:var(--red);margin-right:6px"></i><strong>Chat Suspended:</strong> You are muted by a moderator. Reason: ${muteReason}`;
+                }
+            }
+
+            // Real-time listener for chat messages
+            if (activeMatchChatTid) {
+                db.ref(`tournament_chats/${activeMatchChatTid}`).off();
+            }
+            activeMatchChatTid = tid;
+
+            db.ref(`tournament_chats/${tid}`).limitToLast(50).on('value', snap => {
+                const msgs = snap.val() || {};
+                const list = Object.entries(msgs);
+                if (!list.length) {
+                    container.innerHTML = '<p style="text-align:center;color:var(--text4);padding:24px 10px;font-size:11.5px"><i class="fas fa-comment-dots" style="margin-right:6px"></i>Match chat is open! Say hello to your squad.</p>';
+                    return;
+                }
+                container.innerHTML = list.map(([mId, m]) => {
+                    const isMe = U && m.uid === U.uid;
+                    const isMod = m.is_mod || (m.username && m.username.startsWith('[MOD]')) || m.role === 'moderator' || m.role === 'admin';
+
+                    return `
+                    <div style="margin-bottom:8px;display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'}">
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;font-size:10px;color:var(--text4)">
+                            <span style="font-weight:700;color:${isMod ? 'var(--yellow)' : isMe ? 'var(--cyan)' : 'var(--text3)'}">${m.username || 'Player'}</span>
+                            ${isMod ? '<span class="badge badge-upcoming" style="font-size:7px;padding:1px 5px">STAFF</span>' : ''}
+                            <span>${m.created_at ? new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</span>
+                        </div>
+                        <div style="max-width:82%;padding:8px 12px;border-radius:${isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px'};background:${isMod ? 'linear-gradient(135deg,rgba(234,179,8,0.15),rgba(24,27,40,0.9))' : isMe ? 'linear-gradient(135deg,rgba(6,182,212,0.2),rgba(139,92,246,0.2))' : 'var(--bg3)'};border:1px solid ${isMod ? 'rgba(234,179,8,0.4)' : isMe ? 'rgba(6,182,212,0.3)' : 'var(--border3)'};font-size:12px;color:var(--text);line-height:1.4;word-break:break-word">
+                            ${m.text || ''}
+                        </div>
+                    </div>`;
+                }).join('');
+                container.scrollTop = container.scrollHeight;
+            });
+
+            if (form) {
+                form.onsubmit = async e => {
+                    e.preventDefault();
+                    const text = input.value.trim();
+                    if (!text || !U) return;
+
+                    // Re-check mute
+                    try {
+                        const muteSnap = await db.ref(`muted_users/${U.uid}`).once('value');
+                        const m = muteSnap.val();
+                        if (m && (m.muted_until === 'permanent' || new Date(m.muted_until) > new Date())) {
+                            showToast('You are muted by a moderator and cannot chat', true);
+                            return;
+                        }
+                    } catch(e) {}
+
+                    input.value = '';
+                    const msgRef = db.ref(`tournament_chats/${tid}`).push();
+                    await msgRef.set({
+                        id: msgRef.key,
+                        uid: U.uid,
+                        username: U.username || 'Player',
+                        text: text,
+                        is_mod: (U.role === 'moderator' || U.role === 'admin'),
+                        created_at: new Date().toISOString()
+                    });
+                };
             }
         }
 
