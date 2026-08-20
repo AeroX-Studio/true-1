@@ -1,0 +1,1830 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Velrix Moderator — Tournament Operations</title>
+    <meta name="description" content="Velrix Esports Moderator Portal — Manage tournaments, player rosters, disputes, live chats, and push notifications.">
+    <meta name="theme-color" content="#07080D">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-functions.js"></script>
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Sora', 'Inter', sans-serif; -webkit-tap-highlight-color: transparent }
+        :root {
+            --bg: #07080D; --bg2: #0c0e16; --bg3: #11131C; --bg4: #181b28; --bg5: #1f2335;
+            --card: rgba(17, 19, 28, 0.88); --card2: rgba(24, 27, 40, 0.7);
+            --border: rgba(6, 182, 212, 0.2); --border-violet: rgba(139, 92, 246, 0.2);
+            --border3: rgba(255, 255, 255, 0.07); --border4: rgba(255, 255, 255, 0.03);
+            --cyan: #06B6D4; --cyan2: #0891B2; --cyan-glow: rgba(6, 182, 212, 0.3); --cyan-glow2: rgba(6, 182, 212, 0.12);
+            --violet: #8B5CF6; --violet2: #7C3AED; --violet-glow: rgba(139, 92, 246, 0.3);
+            --text: #E8E8EC; --text2: #A1A1AA; --text3: #71717A; --text4: #3F3F46;
+            --green: #22c55e; --green-glow: rgba(34, 197, 94, 0.18);
+            --red: #ef4444; --red-glow: rgba(239, 68, 68, 0.18);
+            --yellow: #eab308; --yellow-glow: rgba(234, 179, 8, 0.18);
+            --orange: #f97316; --orange-glow: rgba(249, 115, 22, 0.18);
+            --gradient: linear-gradient(135deg, var(--cyan), var(--violet));
+            --gradient-card: linear-gradient(160deg, rgba(6, 182, 212, 0.08), rgba(139, 92, 246, 0.04));
+            --radius: 14px; --radius-sm: 10px; --radius-lg: 20px; --radius-xl: 24px;
+            --shadow-card: 0 4px 32px rgba(0, 0, 0, 0.45);
+        }
+
+        body { background: var(--bg); color: var(--text); overflow-x: hidden; min-height: 100vh }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes spin { to { transform: rotate(360deg) } }
+        @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: .5 } }
+
+        .fade-in { animation: fadeIn .3s ease both }
+        .fade-up { animation: slideUp .35s cubic-bezier(0.16, 1, 0.3, 1) both }
+
+        #mod-app { max-width: 620px; margin: 0 auto; min-height: 100vh; position: relative; z-index: 1 }
+        .page { display: none; padding-bottom: 95px }
+        .page.active { display: block; animation: fadeIn .3s ease }
+
+        /* Top Header */
+        .mod-header { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; background: rgba(7, 8, 13, 0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border3); position: sticky; top: 0; z-index: 90 }
+        .mod-brand { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 900; letter-spacing: .5px }
+        .mod-badge { background: var(--cyan-glow); color: var(--cyan); border: 1px solid rgba(6, 182, 212, 0.4); font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 100px; text-transform: uppercase; letter-spacing: .5px }
+        .header-actions { display: flex; align-items: center; gap: 8px }
+
+        /* Bottom Nav */
+        #mod-bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 620px; z-index: 100; display: none; background: rgba(7, 8, 13, 0.96); backdrop-filter: blur(28px); border-top: 1px solid var(--border3); padding: 4px 0 env(safe-area-inset-bottom, 8px) }
+        .nav-bar { display: flex; justify-content: space-around; align-items: center; padding: 2px 4px }
+        .m-nav { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 6px; border-radius: 12px; cursor: pointer; transition: all .3s; text-decoration: none; color: var(--text4); min-width: 48px; position: relative }
+        .m-nav i { font-size: 16px; transition: all .3s }
+        .m-nav span { font-size: 8.5px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase }
+        .m-nav.active { color: var(--cyan) }
+        .m-nav.active i { transform: translateY(-2px); color: var(--cyan) }
+        .m-nav.active::after { content: ''; position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 20px; height: 3px; background: var(--gradient); border-radius: 0 0 4px 4px; box-shadow: 0 2px 12px var(--cyan-glow) }
+
+        /* Components */
+        .card { background: var(--card); border: 1px solid var(--border3); border-radius: var(--radius-lg); padding: 20px; transition: all .3s; backdrop-filter: blur(14px); position: relative; overflow: hidden }
+        .card:hover { border-color: rgba(6, 182, 212, 0.25) }
+        .btn { padding: 12px 18px; border-radius: var(--radius); font-weight: 700; font-size: 12.5px; border: none; cursor: pointer; transition: all .25s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; letter-spacing: .3px; font-family: 'Sora', sans-serif }
+        .btn:active { transform: scale(0.98) }
+        .btn-primary { background: var(--gradient); color: #fff; box-shadow: 0 4px 20px var(--cyan-glow) }
+        .btn-secondary { background: rgba(6, 182, 212, 0.1); color: var(--cyan); border: 1.5px solid rgba(6, 182, 212, 0.3) }
+        .btn-outline { background: transparent; color: var(--text2); border: 1.5px solid var(--border3) }
+        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 16px var(--red-glow) }
+        .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 4px 16px var(--green-glow) }
+        .btn-warning { background: linear-gradient(135deg, #eab308, #ca8a04); color: #07080D; font-weight: 800 }
+        .btn-ghost { background: transparent; color: var(--text3); border: none; padding: 6px 10px; width: auto }
+        .btn-sm { padding: 7px 12px; font-size: 11px; border-radius: var(--radius-sm) }
+        .input, .textarea, .select { width: 100%; padding: 12px 14px; background: var(--bg3); border: 1.5px solid var(--border3); border-radius: var(--radius-sm); color: var(--text); font-size: 13px; transition: all .25s; outline: none; font-family: 'Sora', sans-serif }
+        .textarea { resize: vertical; min-height: 80px; line-height: 1.5 }
+        .input:focus, .textarea:focus, .select:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px var(--cyan-glow2); background: var(--bg4) }
+        .label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text3); margin-bottom: 7px; letter-spacing: .6px; text-transform: uppercase }
+        .space-y > * + * { margin-top: 12px }
+        .section-title { font-size: 18px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px }
+        .divider { height: 1px; background: var(--border3); margin: 16px 0 }
+
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 100px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px }
+        .badge-draft { background: rgba(113, 113, 122, 0.2); color: #A1A1AA; border: 1px solid rgba(113, 113, 122, 0.3) }
+        .badge-upcoming { background: var(--yellow-glow); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.3) }
+        .badge-live { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); animation: pulse 2s infinite }
+        .badge-paused { background: var(--orange-glow); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3) }
+        .badge-completed { background: var(--green-glow); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.3) }
+        .badge-cancelled { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.4) }
+        .badge-warned { background: rgba(234, 179, 8, 0.2); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.4) }
+        .badge-banned { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.5) }
+
+        /* Tab Bar */
+        .tab-bar { display: flex; background: var(--bg3); border-radius: var(--radius); padding: 4px; gap: 4px; margin-bottom: 18px; border: 1px solid var(--border3); overflow-x: auto }
+        .tab { flex: 1; min-width: 70px; padding: 9px 10px; text-align: center; border-radius: var(--radius-sm); font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all .25s; color: var(--text4); white-space: nowrap }
+        .tab.active { background: var(--gradient); color: #fff; box-shadow: 0 4px 16px var(--cyan-glow) }
+
+        /* Stats Grid */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px }
+        .stat-card { background: var(--card); border: 1px solid var(--border3); border-radius: var(--radius); padding: 12px 8px; text-align: center }
+        .stat-val { font-size: 20px; font-weight: 900; font-family: 'Space Grotesk', sans-serif }
+        .stat-lbl { font-size: 9px; font-weight: 700; color: var(--text3); text-transform: uppercase; margin-top: 4px; letter-spacing: .4px }
+
+        /* Toast */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: var(--radius); font-size: 13px; font-weight: 600; z-index: 1000; display: none; animation: fadeIn .3s ease; backdrop-filter: blur(20px); max-width: 90%; box-shadow: var(--shadow-card) }
+        .toast-s { background: rgba(34, 197, 94, 0.95); color: #fff }
+        .toast-e { background: rgba(239, 68, 68, 0.95); color: #fff }
+
+        /* Modal Overlays & Drawers */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(7, 8, 13, 0.88); backdrop-filter: blur(16px); z-index: 500; display: none; align-items: flex-end; justify-content: center }
+        .modal-content { background: var(--bg2); border-top: 1px solid var(--border); border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: 24px 20px 40px; width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; animation: slideUp .3s ease; box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6) }
+        @media(min-width: 600px) {
+            .modal-overlay { align-items: center; padding: 20px }
+            .modal-content { border-radius: var(--radius-xl); border: 1px solid var(--border) }
+        }
+        .modal-handle { width: 40px; height: 4px; border-radius: 10px; background: var(--text4); margin: 0 auto 16px }
+        .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 18px; display: flex; align-items: center; gap: 10px }
+
+        /* Neon Spinner */
+        .neon-spinner { width: 40px; height: 40px; margin: 0 auto; border-radius: 50%; border: 3px solid var(--bg5); border-top-color: var(--cyan); border-right-color: var(--violet); animation: spin .8s linear infinite; box-shadow: 0 0 16px var(--cyan-glow) }
+        .watermark { text-align: center; padding: 20px; font-size: 10px; color: var(--text4); letter-spacing: 1px; font-weight: 600 }
+        .watermark span { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent }
+        
+        .perm-pill { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px }
+        .perm-on { background: rgba(34, 197, 94, 0.15); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.3) }
+        .perm-off { background: rgba(239, 68, 68, 0.12); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3) }
+    </style>
+</head>
+
+<body>
+    <div id="mod-app">
+        <!-- Top App Header -->
+        <header class="mod-header" id="modHeader" style="display:none">
+            <div class="mod-brand">
+                <i class="fas fa-shield-halved" style="color:var(--cyan)"></i>
+                <span>VELRIX <span style="font-weight:400;color:var(--text3)">MOD</span></span>
+            </div>
+            <div class="header-actions">
+                <button onclick="navTo('modPushPage')" class="btn btn-secondary btn-sm" style="width:auto;padding:5px 10px;font-size:11px" title="Send Push Notification"><i class="fas fa-paper-plane"></i>Push</button>
+                <span class="mod-badge"><i class="fas fa-circle" style="font-size:7px;color:var(--green);margin-right:4px"></i>Live</span>
+            </div>
+        </header>
+
+        <!-- Initial Loader -->
+        <div id="mod-loader" style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px">
+            <div class="neon-spinner"></div>
+            <p style="color:var(--text3);font-size:13px;font-weight:600">Loading Moderator Operations...</p>
+        </div>
+
+        <!-- Main Pages -->
+        <main>
+            <div id="modLoginPage" class="page"></div>
+            <div id="modDashboardPage" class="page"></div>
+            <div id="modTournamentPage" class="page"></div>
+            <div id="modPlayersPage" class="page"></div>
+            <div id="modDisputesPage" class="page"></div>
+            <div id="modChatPage" class="page"></div>
+            <div id="modPushPage" class="page"></div>
+            <div id="modCreateTournamentPage" class="page"></div>
+            <div id="modManageTournamentPage" class="page"></div>
+            <div id="modGamesPage" class="page"></div>
+            <div id="modProfilePage" class="page"></div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav id="mod-bottom-nav">
+            <div class="nav-bar">
+                <a class="m-nav" onclick="navTo('modDashboardPage')" id="mnav-dash"><i class="fas fa-chart-pie"></i><span>Dash</span></a>
+                <a class="m-nav" onclick="navTo('modTournamentPage')" id="mnav-tourn"><i class="fas fa-trophy"></i><span>Matches</span></a>
+                <a class="m-nav" onclick="navTo('modPlayersPage')" id="mnav-players"><i class="fas fa-users"></i><span>Players</span></a>
+                <a class="m-nav" onclick="navTo('modDisputesPage')" id="mnav-disputes"><i class="fas fa-shield-halved"></i><span>Disputes</span></a>
+                <a class="m-nav" onclick="navTo('modChatPage')" id="mnav-chat"><i class="fas fa-comments"></i><span>Chat</span></a>
+                <a class="m-nav" onclick="navTo('modPushPage')" id="mnav-push"><i class="fas fa-paper-plane"></i><span>Push</span></a>
+                <a class="m-nav" onclick="navTo('modProfilePage')" id="mnav-prof"><i class="fas fa-user-shield"></i><span>Mod</span></a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Edit Tournament Modal -->
+    <div id="modEditModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-edit" style="color:var(--cyan)"></i>Edit Tournament</div>
+            <form id="modEditForm" class="space-y">
+                <input type="hidden" id="medit-id">
+                <div><label class="label">Tournament Title *</label><input type="text" id="medit-title" class="input" required></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div><label class="label">Game Name</label><input type="text" id="medit-game" class="input" required></div>
+                    <div><label class="label">Match Mode</label><input type="text" id="medit-mode" class="input" required></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div><label class="label">Map</label><input type="text" id="medit-map" class="input"></div>
+                    <div><label class="label">Max Slots</label><input type="number" id="medit-slots" class="input" min="2"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div><label class="label">Entry Fee (৳) *</label><input type="number" id="medit-fee" class="input" min="0" required></div>
+                    <div><label class="label">Prize Pool (৳) *</label><input type="number" id="medit-prize" class="input" min="0" required></div>
+                </div>
+                <div><label class="label">Match Date & Time *</label><input type="datetime-local" id="medit-time" class="input" required></div>
+                <div><label class="label">Thumbnail / Banner URL</label><input type="url" id="medit-thumb" placeholder="https://..." class="input"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div><label class="label">Room ID</label><input type="text" id="medit-roomid" placeholder="Room ID" class="input"></div>
+                    <div><label class="label">Room Password</label><input type="text" id="medit-roompass" placeholder="Password" class="input"></div>
+                </div>
+                <div>
+                    <label class="label">Status</label>
+                    <select id="medit-status" class="input">
+                        <option value="Upcoming">Upcoming</option>
+                        <option value="Live">Live</option>
+                        <option value="Paused">Paused</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div><label class="label">Rules & Notes</label><textarea id="medit-rules" class="textarea" rows="3" placeholder="Match rules..."></textarea></div>
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>Save Changes</button>
+                    <button type="button" onclick="closeModEditModal()" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Proof Viewer Modal -->
+    <div id="proofViewerModal" class="modal-overlay">
+        <div class="modal-content" style="text-align:center">
+            <div class="modal-handle"></div>
+            <div class="modal-title" style="justify-content:center"><i class="fas fa-image" style="color:var(--cyan)"></i>Match Evidence / Screenshot Proof</div>
+            <div style="margin:14px 0;max-height:50vh;overflow:hidden;border-radius:var(--radius);border:1px solid var(--border3)">
+                <img id="proof-view-img" src="" alt="Proof Screenshot" style="width:100%;height:auto;max-height:50vh;object-fit:contain;display:block;margin:0 auto">
+            </div>
+            <p style="font-size:11px;color:var(--text3);margin-bottom:16px" id="proof-view-caption">Submitted Proof Evidence</p>
+            <div style="display:flex;gap:8px">
+                <a id="proof-download-link" href="#" target="_blank" class="btn btn-secondary btn-sm" style="flex:1"><i class="fas fa-external-link-alt"></i>Open Full Size</a>
+                <button type="button" onclick="closeProofViewerModal()" class="btn btn-outline btn-sm" style="flex:1">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issue Warning Modal -->
+    <div id="issueWarningModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-exclamation-triangle" style="color:var(--yellow)"></i>Issue Player Warning</div>
+            <form id="issueWarningForm" class="space-y">
+                <input type="hidden" id="warn-target-uid">
+                <div class="card" style="padding:12px;background:var(--bg4)">
+                    <p style="font-weight:700;font-size:13px" id="warn-target-name">Player Name</p>
+                    <p style="font-size:10px;color:var(--text4)" id="warn-target-info">UID: ...</p>
+                </div>
+                <div>
+                    <label class="label">Violation Category</label>
+                    <select id="warn-category" class="input">
+                        <option value="Toxicity / Abuse">Toxicity / Abusive Language</option>
+                        <option value="Teaming / Glitch">Teaming / Illegal In-Game Glitch</option>
+                        <option value="Fake Room ID / Impersonation">Fake Credentials / Impersonation</option>
+                        <option value="No-Show / Slot Blocking">No-Show / Slot Blocking</option>
+                        <option value="Rule Infraction">General Tournament Rule Violation</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="label">Warning Details & Note *</label>
+                    <textarea id="warn-note" class="textarea" rows="3" placeholder="Explain the violation. This will be recorded on the user's permanent profile." required></textarea>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    <button type="submit" class="btn btn-warning"><i class="fas fa-shield-alt"></i>Issue Official Warning</button>
+                    <button type="button" onclick="closeIssueWarningModal()" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mute User Modal -->
+    <div id="muteUserModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-comment-slash" style="color:var(--red)"></i>Timeout / Mute User</div>
+            <form id="muteUserForm" class="space-y">
+                <input type="hidden" id="mute-target-uid">
+                <div class="card" style="padding:12px;background:var(--bg4)">
+                    <p style="font-weight:700;font-size:13px" id="mute-target-name">User Name</p>
+                </div>
+                <div>
+                    <label class="label">Mute Duration</label>
+                    <select id="mute-duration" class="input">
+                        <option value="15">15 Minutes Timeout</option>
+                        <option value="60">1 Hour Timeout</option>
+                        <option value="1440">24 Hours Mute</option>
+                        <option value="10080">7 Days Mute</option>
+                        <option value="permanent">Permanent Chat Ban</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="label">Reason *</label>
+                    <input type="text" id="mute-reason" class="input" placeholder="e.g. Spamming match chat / offensive language" required>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-volume-mute"></i>Confirm Timeout</button>
+                    <button type="button" onclick="closeMuteUserModal()" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- OneSignal Verification Dialog Modal -->
+    <div id="oneSignalVerificationModal" class="modal-overlay" style="z-index:9999">
+        <div class="modal-content" style="text-align:center;max-width:480px">
+            <div class="modal-handle"></div>
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(6,182,212,0.15);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 0 25px var(--cyan-glow)"><i class="fas fa-bell"></i></div>
+            <h3 style="font-size:18px;font-weight:900;margin-bottom:10px">Your OneSignal SDK integration is complete!</h3>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6">You can now send Push Notifications & In-App Messages through OneSignal. Tap below to enable push notifications.</p>
+            <button type="button" onclick="handleOneSignalGotIt()" class="btn btn-primary btn-lg" style="width:100%"><i class="fas fa-check"></i>Got it</button>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // ── OneSignal SDK & Median Push Integration ──
+        const ONESIGNAL_APP_ID = "421b1a39-54f8-45bd-84b8-aee27bba64c5";
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        let oneSignalSubscriptionObserver = null;
+        let oneSignalVerificationDialogShown = false;
+
+        function initOneSignalSDK() {
+            // 1. Median.co Native Web-to-APK OneSignal Bridge Check
+            if (window.median && window.median.onesignal) {
+                console.log('[OneSignal] Initializing via Median.co Native OneSignal Bridge');
+                if (typeof window.median.onesignal.info === 'function') {
+                    window.median.onesignal.info(data => {
+                        if (data && (data.userId || data.subscriptionId) && !oneSignalVerificationDialogShown) {
+                            checkAndShowOneSignalVerificationDialog(data.userId || data.subscriptionId, true);
+                        }
+                    });
+                }
+            }
+
+            // 2. OneSignal Official Web SDK
+            OneSignalDeferred.push(async function(OneSignal) {
+                try {
+                    await OneSignal.init({
+                        appId: ONESIGNAL_APP_ID,
+                        allowLocalhostAsSecureOrigin: true,
+                        notifyButton: { enable: false }
+                    });
+                    console.log('[OneSignal] Web SDK Initialized with App ID:', ONESIGNAL_APP_ID);
+
+                    // Retained observer reference
+                    oneSignalSubscriptionObserver = function(event) {
+                        const subId = OneSignal.User?.PushSubscription?.id;
+                        if (subId && typeof subId === 'string' && subId.trim() !== '' && !subId.startsWith('local-')) {
+                            checkAndShowOneSignalVerificationDialog(subId, false);
+                        }
+                    };
+
+                    if (OneSignal.User && OneSignal.User.PushSubscription) {
+                        OneSignal.User.PushSubscription.addEventListener("change", oneSignalSubscriptionObserver);
+                        
+                        // Evaluate immediately at observer-registration time
+                        const currentSubId = OneSignal.User.PushSubscription.id;
+                        if (currentSubId && typeof currentSubId === 'string' && currentSubId.trim() !== '' && !currentSubId.startsWith('local-')) {
+                            checkAndShowOneSignalVerificationDialog(currentSubId, false);
+                        }
+                    }
+                } catch(err) {
+                    console.warn('[OneSignal] Initialization note:', err);
+                }
+            });
+        }
+
+        function checkAndShowOneSignalVerificationDialog(subId, isMedian) {
+            if (oneSignalVerificationDialogShown) return;
+            const key = 'onesignal_verified_' + subId;
+            if (localStorage.getItem(key)) {
+                oneSignalVerificationDialogShown = true;
+                return;
+            }
+            oneSignalVerificationDialogShown = true;
+            localStorage.setItem(key, 'true');
+            showOneSignalVerificationModal();
+        }
+
+        function showOneSignalVerificationModal() {
+            const modal = document.getElementById('oneSignalVerificationModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function handleOneSignalGotIt() {
+            const modal = document.getElementById('oneSignalVerificationModal');
+            if (modal) modal.style.display = 'none';
+            requestOneSignalPushPermission();
+        }
+
+        function requestOneSignalPushPermission() {
+            // Median.co native bridge registration
+            if (window.median && window.median.onesignal && typeof window.median.onesignal.register === 'function') {
+                window.median.onesignal.register();
+                showToast('Push Notifications Enabled! 🔔');
+                return;
+            }
+            // Web SDK
+            if (window.OneSignal) {
+                OneSignal.Notifications.requestPermission().then(granted => {
+                    if (granted) showToast('Push Notifications Enabled! 🔔');
+                }).catch(() => {});
+            }
+        }
+
+        initOneSignalSDK();
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgxg06yT5BvGEgpC8bcyXwU9h0UEuaZss",
+            authDomain: "veltrix-tournament.firebaseapp.com",
+            databaseURL: "https://veltrix-tournament-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "veltrix-tournament",
+            storageBucket: "veltrix-tournament.firebasestorage.app",
+            messagingSenderId: "929705162089",
+            appId: "1:929705162089:web:f02ee691c418b3e01ab9f8"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(), db = firebase.database();
+        let currentMod = null, currentTid = null, curFilter = 'All', curPlayerFilter = 'All', curDisputeTab = 'tickets';
+
+        const fmt = amt => '৳' + Number(amt || 0).toLocaleString('en-US');
+        const sanitizeUrl = u => (u && typeof u === 'string' && (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('data:image/'))) ? u : '';
+
+        // ══════════════════════════════════════════════════════════════
+        // PERMISSION SYSTEM & ACCESS GATES
+        // ══════════════════════════════════════════════════════════════
+        const MOD_PERMISSION_KEYS = [
+            'view_tournaments',
+            'edit_tournaments',
+            'manage_players',
+            'manage_teams',
+            'verify_results',
+            'manage_reports',
+            'ban_players',
+            'send_notifications'
+        ];
+
+        function hasPerm(key) {
+            if (!currentMod) return false;
+            if (currentMod.role === 'admin') return true;
+            if (!currentMod.mod_permissions) return true; // Default allow if permissions not yet customized
+            return currentMod.mod_permissions[key] !== false;
+        }
+
+        function checkPermOrAlert(key) {
+            if (hasPerm(key)) return true;
+            const label = key.replace(/_/g, ' ').toUpperCase();
+            showToast(`⚠️ Access Restricted: You lack permission to ${label}. Contact Admin.`, true);
+            return false;
+        }
+
+        function showToast(msg, isErr) {
+            const t = document.getElementById('toast');
+            t.className = isErr ? 'toast-e' : 'toast-s';
+            t.textContent = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3200);
+        }
+
+        // Navigation
+        function navTo(pid, data) {
+            document.getElementById('mod-loader').style.display = 'none';
+            if (pid === 'modManageTournamentPage' && data) currentTid = data.tid;
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const target = document.getElementById(pid);
+            if (target) {
+                target.classList.add('active');
+                loadModPage(pid);
+            }
+            const map = {
+                modDashboardPage: 'mnav-dash',
+                modTournamentPage: 'mnav-tourn',
+                modPlayersPage: 'mnav-players',
+                modDisputesPage: 'mnav-disputes',
+                modChatPage: 'mnav-chat',
+                modPushPage: 'mnav-push',
+                modProfilePage: 'mnav-prof'
+            };
+            document.querySelectorAll('.m-nav').forEach(n => n.classList.toggle('active', n.id === map[pid]));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Auth Listener
+        auth.onAuthStateChanged(async user => {
+            document.getElementById('mod-loader').style.display = 'none';
+            if (user) {
+                const snap = await db.ref(`users/${user.uid}`).once('value');
+                const ud = snap.val();
+                if (ud && (ud.role === 'moderator' || ud.role === 'admin')) {
+                    currentMod = { uid: user.uid, email: user.email, ...ud };
+                    document.getElementById('modHeader').style.display = 'flex';
+                    document.getElementById('mod-bottom-nav').style.display = 'block';
+                    navTo('modDashboardPage');
+                } else {
+                    showToast('Access denied — Moderator or Admin role required', true);
+                    currentMod = null;
+                    document.getElementById('modHeader').style.display = 'none';
+                    document.getElementById('mod-bottom-nav').style.display = 'none';
+                    renderModLogin(document.getElementById('modLoginPage'), true);
+                    navTo('modLoginPage');
+                }
+            } else {
+                currentMod = null;
+                document.getElementById('modHeader').style.display = 'none';
+                document.getElementById('mod-bottom-nav').style.display = 'none';
+                renderModLogin(document.getElementById('modLoginPage'), false);
+                navTo('modLoginPage');
+            }
+        });
+
+        function loadModPage(pid) {
+            const c = document.getElementById(pid);
+            if (!c) return;
+            switch(pid) {
+                case 'modLoginPage': renderModLogin(c); break;
+                case 'modDashboardPage': renderModDashboard(c); break;
+                case 'modTournamentPage': renderModTournaments(c); break;
+                case 'modPlayersPage': renderModPlayers(c); break;
+                case 'modDisputesPage': renderModDisputes(c); break;
+                case 'modChatPage': renderModChat(c); break;
+                case 'modPushPage': renderModPush(c); break;
+                case 'modCreateTournamentPage': renderModCreate(c); break;
+                case 'modManageTournamentPage': renderModManage(c); break;
+                case 'modGamesPage': renderModGames(c); break;
+                case 'modProfilePage': renderModProfile(c); break;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 1. LOGIN PAGE
+        // ══════════════════════════════════════════════════════════════
+        function renderModLogin(c, denied) {
+            c.innerHTML = `
+            <div style="padding:40px 24px;min-height:100vh;display:flex;flex-direction:column;justify-content:center;position:relative">
+                <div style="text-align:center;margin-bottom:30px" class="fade-up">
+                    <div style="width:84px;height:84px;margin:0 auto 18px;border-radius:50%;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:34px;color:#fff;box-shadow:0 0 45px var(--cyan-glow)"><i class="fas fa-shield-halved"></i></div>
+                    <h1 style="font-size:26px;font-weight:900;letter-spacing:.5px;margin-bottom:6px;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">MODERATOR PORTAL</h1>
+                    <p style="color:var(--text3);font-size:13px;font-weight:500">Velrix Esports Operations & Match Control</p>
+                </div>
+                ${denied ? `<div class="card" style="margin-bottom:18px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.08);text-align:center"><i class="fas fa-exclamation-triangle" style="color:var(--red);margin-bottom:6px"></i><p style="font-size:12px;color:var(--red);font-weight:700">Access Denied: Your account role is not Moderator or Admin.</p></div>` : ''}
+                <div class="card fade-up" style="border-radius:var(--radius-xl);border:1px solid var(--border)">
+                    <form id="modLoginForm" class="space-y">
+                        <div><label class="label">Moderator Email</label><input type="email" id="mod-email" placeholder="mod@velrix.com" class="input" required></div>
+                        <div><label class="label">Password</label><input type="password" id="mod-pass" placeholder="••••••••" class="input" required></div>
+                        <button type="submit" class="btn btn-primary btn-lg" style="margin-top:16px"><i class="fas fa-sign-in-alt"></i>Login to Moderator Panel</button>
+                    </form>
+                </div>
+                <a href="index.html" class="btn btn-ghost" style="margin-top:16px;font-size:12px;color:var(--text3);text-align:center"><i class="fas fa-arrow-left"></i>Back to Player Arena</a>
+                <div class="watermark" style="margin-top:20px">Velrix Operations — <span>AeroX Studio</span></div>
+            </div>`;
+
+            document.getElementById('modLoginForm')?.addEventListener('submit', async e => {
+                e.preventDefault();
+                const em = document.getElementById('mod-email').value.trim();
+                const pw = document.getElementById('mod-pass').value;
+                const b = e.target.querySelector('button[type="submit"]');
+                b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+                b.disabled = true;
+
+                try {
+                    await auth.signInWithEmailAndPassword(em, pw);
+                } catch(err) {
+                    showToast(err.message, true);
+                    b.innerHTML = '<i class="fas fa-sign-in-alt"></i>Login to Moderator Panel';
+                    b.disabled = false;
+                }
+            });
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 2. DASHBOARD
+        // ══════════════════════════════════════════════════════════════
+        async function renderModDashboard(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+                <div>
+                    <h2 style="font-size:21px;font-weight:900">Welcome, ${currentMod?.username || 'Moderator'} 🛡️</h2>
+                    <p style="font-size:11px;color:var(--text3)">Active Role: <strong style="color:var(--cyan)">${(currentMod?.role || 'Moderator').toUpperCase()}</strong></p>
+                </div>
+                <button onclick="navTo('modCreateTournamentPage')" class="btn btn-primary btn-sm" style="width:auto;padding:7px 12px"><i class="fas fa-plus"></i>Create Match</button>
+            </div>
+            
+            <!-- KPI Stats Grid -->
+            <div class="stat-grid fade-up">
+                <div class="stat-card"><div class="stat-val" style="color:var(--red)" id="stat-live">0</div><div class="stat-lbl">Live Matches</div></div>
+                <div class="stat-card"><div class="stat-val" style="color:var(--yellow)" id="stat-up">0</div><div class="stat-lbl">Upcoming</div></div>
+                <div class="stat-card"><div class="stat-val" style="color:var(--cyan)" id="stat-reports">0</div><div class="stat-lbl">Disputes</div></div>
+                <div class="stat-card"><div class="stat-val" style="color:var(--violet)" id="stat-muted">0</div><div class="stat-lbl">Muted UIDs</div></div>
+            </div>
+
+            <!-- Permission Overview Card -->
+            <div class="card fade-up stagger-1" style="margin-bottom:18px;padding:14px;background:var(--bg4)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase"><i class="fas fa-lock" style="color:var(--cyan);margin-right:6px"></i>Your Operational Privileges</span>
+                    <span class="badge ${currentMod?.role === 'admin' ? 'badge-completed' : 'badge-upcoming'}" style="font-size:8px">${currentMod?.role === 'admin' ? 'Super Admin' : 'Staff Moderator'}</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                    ${MOD_PERMISSION_KEYS.map(k => {
+                        const ok = hasPerm(k);
+                        return `<span class="perm-pill ${ok ? 'perm-on' : 'perm-off'}"><i class="fas ${ok ? 'fa-check' : 'fa-times'}"></i>${k.replace(/_/g, ' ')}</span>`;
+                    }).join('')}
+                </div>
+            </div>
+
+            <!-- Quick Action Hub -->
+            <div class="section-title"><i class="fas fa-bolt" style="color:var(--cyan)"></i>Moderator Action Hub</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px">
+                <div class="card" onclick="navTo('modCreateTournamentPage')" style="cursor:pointer;padding:14px;text-align:center">
+                    <i class="fas fa-plus-circle" style="font-size:22px;color:var(--cyan);margin-bottom:6px"></i>
+                    <p style="font-weight:800;font-size:12px">New Match</p>
+                </div>
+                <div class="card" onclick="navTo('modPushPage')" style="cursor:pointer;padding:14px;text-align:center">
+                    <i class="fas fa-paper-plane" style="font-size:22px;color:var(--yellow);margin-bottom:6px"></i>
+                    <p style="font-weight:800;font-size:12px">Push Alert</p>
+                </div>
+                <div class="card" onclick="navTo('modDisputesPage')" style="cursor:pointer;padding:14px;text-align:center">
+                    <i class="fas fa-shield-halved" style="font-size:22px;color:var(--red);margin-bottom:6px"></i>
+                    <p style="font-weight:800;font-size:12px">Disputes Desk</p>
+                </div>
+                <div class="card" onclick="navTo('modChatPage')" style="cursor:pointer;padding:14px;text-align:center">
+                    <i class="fas fa-comments" style="font-size:22px;color:var(--violet);margin-bottom:6px"></i>
+                    <p style="font-weight:800;font-size:12px">Live Chat</p>
+                </div>
+                <div class="card" onclick="navTo('modPlayersPage')" style="cursor:pointer;padding:14px;text-align:center">
+                    <i class="fas fa-users" style="font-size:22px;color:var(--green);margin-bottom:6px"></i>
+                    <p style="font-weight:800;font-size:12px">Player Lookup</p>
+                </div>
+                <div class="card" onclick="navTo('modTournamentPage')" style="cursor:pointer;padding:14px;text-align:center">
+                    <i class="fas fa-door-open" style="font-size:22px;color:var(--cyan);margin-bottom:6px"></i>
+                    <p style="font-weight:800;font-size:12px">Room IDs</p>
+                </div>
+            </div>
+
+            <!-- Active / Pending Matches -->
+            <div class="section-title"><i class="fas fa-trophy" style="color:var(--violet)"></i>Match Control Center</div>
+            <div id="dash-tourn-list" class="space-y"><div style="text-align:center;padding:30px"><div class="neon-spinner"></div></div></div>
+            </div>`;
+
+            // Fetch live counts
+            const [tSnap, ticketSnap, dispSnap, muteSnap] = await Promise.all([
+                db.ref('tournaments').once('value'),
+                db.ref('support_tickets').once('value'),
+                db.ref('match_disputes').once('value'),
+                db.ref('muted_users').once('value')
+            ]);
+            const ts = tSnap.val() || {};
+            const tickets = ticketSnap.val() || {};
+            const disputes = dispSnap.val() || {};
+            const mutes = muteSnap.val() || {};
+
+            let live = 0, up = 0;
+            const tList = Object.entries(ts);
+            tList.forEach(([, t]) => {
+                if (t.status === 'Live') live++;
+                else if (t.status === 'Upcoming') up++;
+            });
+
+            const openReports = Object.values(tickets).filter(t => t.status !== 'resolved').length + Object.values(disputes).filter(d => d.status !== 'resolved').length;
+
+            document.getElementById('stat-live').textContent = live;
+            document.getElementById('stat-up').textContent = up;
+            document.getElementById('stat-reports').textContent = openReports;
+            document.getElementById('stat-muted').textContent = Object.keys(mutes).length;
+
+            const dashListEl = document.getElementById('dash-tourn-list');
+            if (!tList.length) {
+                dashListEl.innerHTML = '<p style="text-align:center;color:var(--text4);padding:20px;font-size:12px">No tournaments in database</p>';
+                return;
+            }
+            const activeOnly = tList.filter(([, t]) => t.status === 'Live' || t.status === 'Upcoming' || t.status === 'Paused');
+            dashListEl.innerHTML = (activeOnly.length ? activeOnly : tList.slice(0, 4)).map(([id, t]) => `
+            <div class="card fade-up" style="padding:14px;margin-bottom:10px">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+                    <div>
+                        <p style="font-weight:800;font-size:14px">${t.title || 'Tournament'}</p>
+                        <p style="font-size:11px;color:var(--text3)"><i class="fas fa-gamepad" style="margin-right:4px"></i>${t.game_name || 'Game'} • ${t.game_type || 'Match'}</p>
+                    </div>
+                    <span class="badge ${t.status === 'Live' ? 'badge-live' : t.status === 'Paused' ? 'badge-paused' : t.status === 'Completed' ? 'badge-completed' : 'badge-upcoming'}">${t.status}</span>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:10px">
+                    <button onclick="navTo('modManageTournamentPage',{tid:'${id}'})" class="btn btn-secondary btn-sm" style="flex:2"><i class="fas fa-door-open"></i>Room & Winner</button>
+                    <button onclick="openModEdit('${id}')" class="btn btn-outline btn-sm" style="flex:1"><i class="fas fa-edit"></i>Edit</button>
+                </div>
+            </div>`).join('');
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 3. TOURNAMENTS LIST & LIFECYCLE MANAGEMENT
+        // ══════════════════════════════════════════════════════════════
+        async function renderModTournaments(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+                <div class="section-title" style="margin-bottom:0"><i class="fas fa-trophy" style="color:var(--cyan)"></i>Tournament Control</div>
+                <button onclick="navTo('modCreateTournamentPage')" class="btn btn-primary btn-sm" style="width:auto;padding:7px 12px"><i class="fas fa-plus"></i>New Match</button>
+            </div>
+            <div class="tab-bar">
+                <div class="tab ${curFilter==='All'?'active':''}" onclick="setModFilter('All')">All</div>
+                <div class="tab ${curFilter==='Upcoming'?'active':''}" onclick="setModFilter('Upcoming')">Upcoming</div>
+                <div class="tab ${curFilter==='Live'?'active':''}" onclick="setModFilter('Live')">🔴 Live</div>
+                <div class="tab ${curFilter==='Paused'?'active':''}" onclick="setModFilter('Paused')">⏸️ Paused</div>
+                <div class="tab ${curFilter==='Completed'?'active':''}" onclick="setModFilter('Completed')">✅ Done</div>
+                <div class="tab ${curFilter==='Cancelled'?'active':''}" onclick="setModFilter('Cancelled')">❌ Cancelled</div>
+            </div>
+            <div id="mod-tournaments-list" class="space-y"><div style="text-align:center;padding:40px"><div class="neon-spinner"></div></div></div>
+            </div>`;
+
+            loadModTournaments();
+        }
+
+        function setModFilter(f) {
+            curFilter = f;
+            document.querySelectorAll('.tab-bar .tab').forEach(t => t.classList.toggle('active', t.textContent.includes(f) || (f==='All' && t.textContent==='All')));
+            loadModTournaments();
+        }
+
+        async function loadModTournaments() {
+            const listEl = document.getElementById('mod-tournaments-list');
+            if (!listEl) return;
+            const snap = await db.ref('tournaments').once('value');
+            const ts = snap.val() || {};
+            let entries = Object.entries(ts);
+
+            if (curFilter !== 'All') {
+                entries = entries.filter(([, t]) => t.status === curFilter);
+            }
+            if (!entries.length) {
+                listEl.innerHTML = '<div class="card" style="text-align:center;padding:36px 20px"><p style="color:var(--text3);font-size:13px">No tournaments found under "' + curFilter + '"</p></div>';
+                return;
+            }
+
+            listEl.innerHTML = entries.map(([id, t]) => {
+                const prize = t.prize_pool || t.prize?.total_pool || 0;
+                const fee = t.entry_fee || 0;
+                const thumb = sanitizeUrl(t.thumbnail_url);
+                const isPaused = t.status === 'Paused';
+                const isLive = t.status === 'Live';
+                const isUpcoming = t.status === 'Upcoming';
+
+                return `
+                <div class="card fade-up" style="padding:16px;margin-bottom:12px">
+                    ${thumb ? `<div style="width:100%;height:110px;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:10px;position:relative"><img src="${thumb}" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover"><div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(7,8,13,0.85), transparent)"></div><span class="badge ${t.status==='Live'?'badge-live':t.status==='Paused'?'badge-paused':t.status==='Completed'?'badge-completed':t.status==='Cancelled'?'badge-cancelled':'badge-upcoming'}" style="position:absolute;top:10px;right:10px">${t.status}</span></div>` : ''}
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                        <div>
+                            <p style="font-weight:800;font-size:15px">${t.title || 'Untitled Match'}</p>
+                            <p style="font-size:11px;color:var(--text3);margin-top:2px"><i class="fas fa-gamepad" style="margin-right:4px"></i>${t.game_name || 'Free Fire'} • <span style="color:var(--cyan)">${t.game_type || 'Match'}</span> • Map: ${t.map || 'Bermuda'}</p>
+                        </div>
+                        ${!thumb ? `<span class="badge ${t.status==='Live'?'badge-live':t.status==='Paused'?'badge-paused':t.status==='Completed'?'badge-completed':t.status==='Cancelled'?'badge-cancelled':'badge-upcoming'}">${t.status}</span>` : ''}
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;background:var(--bg4);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div><p style="font-size:8.5px;font-weight:700;color:var(--text4);text-transform:uppercase">Entry Fee</p><p style="font-size:12.5px;font-weight:800;color:var(--text)">${fee === 0 ? 'FREE' : fmt(fee)}</p></div>
+                        <div><p style="font-size:8.5px;font-weight:700;color:var(--text4);text-transform:uppercase">Prize Pool</p><p style="font-size:12.5px;font-weight:800;color:var(--green)">${fmt(prize)}</p></div>
+                        <div><p style="font-size:8.5px;font-weight:700;color:var(--text4);text-transform:uppercase">Room ID</p><p style="font-size:12.5px;font-weight:800;color:var(--cyan)">${t.room_id || 'Not Set'}</p></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+                        <button onclick="navTo('modManageTournamentPage',{tid:'${id}'})" class="btn btn-secondary btn-sm"><i class="fas fa-door-open"></i>Room & Results</button>
+                        <button onclick="openModEdit('${id}')" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i>Edit Match</button>
+                    </div>
+                    <div style="display:flex;gap:6px">
+                        ${isLive ? `<button onclick="pauseModTournament('${id}')" class="btn btn-outline btn-sm" style="flex:1;color:var(--orange)"><i class="fas fa-pause"></i>Pause</button>` : ''}
+                        ${isPaused ? `<button onclick="resumeModTournament('${id}')" class="btn btn-success btn-sm" style="flex:1"><i class="fas fa-play"></i>Resume</button>` : ''}
+                        ${(isLive || isUpcoming || isPaused) ? `<button onclick="cancelModTournament('${id}')" class="btn btn-danger btn-sm" style="flex:1"><i class="fas fa-ban"></i>Cancel</button>` : ''}
+                        <button onclick="deleteModTournament('${id}')" class="btn btn-outline btn-sm" style="width:auto;padding:8px 12px;color:var(--red)" title="Delete Tournament"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function pauseModTournament(id) {
+            if (!checkPermOrAlert('edit_tournaments')) return;
+            if (!confirm('Pause this live tournament temporarily?')) return;
+            await db.ref(`tournaments/${id}`).update({ status: 'Paused', updated_at: new Date().toISOString() });
+            showToast('Match Paused ⏸️');
+            loadModTournaments();
+        }
+
+        async function resumeModTournament(id) {
+            if (!checkPermOrAlert('edit_tournaments')) return;
+            await db.ref(`tournaments/${id}`).update({ status: 'Live', updated_at: new Date().toISOString() });
+            showToast('Match Resumed 🔴');
+            loadModTournaments();
+        }
+
+        async function cancelModTournament(id) {
+            if (!checkPermOrAlert('edit_tournaments')) return;
+            const reason = prompt('Enter reason for tournament cancellation:');
+            if (!reason) return;
+            await db.ref(`tournaments/${id}`).update({ status: 'Cancelled', cancel_reason: reason, updated_at: new Date().toISOString() });
+            showToast('Tournament Cancelled ❌');
+            loadModTournaments();
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 4. PLAYER & TEAM MANAGEMENT
+        // ══════════════════════════════════════════════════════════════
+        async function renderModPlayers(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div class="section-title"><i class="fas fa-users" style="color:var(--cyan)"></i>Player & Team Directory</div>
+            
+            <div style="margin-bottom:14px">
+                <input type="text" id="player-search-input" placeholder="Search by username, Free Fire IGN, UID or email..." class="input" oninput="filterPlayersList(this.value)">
+            </div>
+
+            <div class="tab-bar">
+                <div class="tab ${curPlayerFilter==='All'?'active':''}" onclick="setPlayerFilter('All')">All</div>
+                <div class="tab ${curPlayerFilter==='Active'?'active':''}" onclick="setPlayerFilter('Active')">Active</div>
+                <div class="tab ${curPlayerFilter==='Warned'?'active':''}" onclick="setPlayerFilter('Warned')">⚠️ Warned</div>
+                <div class="tab ${curPlayerFilter==='Banned'?'active':''}" onclick="setPlayerFilter('Banned')">🚫 Banned</div>
+            </div>
+
+            <div id="mod-players-list" class="space-y"><div style="text-align:center;padding:40px"><div class="neon-spinner"></div></div></div>
+            </div>`;
+
+            loadModPlayers();
+        }
+
+        let cachedPlayersList = [];
+
+        function setPlayerFilter(f) {
+            curPlayerFilter = f;
+            document.querySelectorAll('#modPlayersPage .tab-bar .tab').forEach(t => t.classList.toggle('active', t.textContent.includes(f) || (f==='All' && t.textContent==='All')));
+            renderPlayersItems(cachedPlayersList);
+        }
+
+        function filterPlayersList(q) {
+            const query = q.toLowerCase().trim();
+            if (!query) {
+                renderPlayersItems(cachedPlayersList);
+                return;
+            }
+            const filtered = cachedPlayersList.filter(([uid, u]) => {
+                return (u.username && u.username.toLowerCase().includes(query)) ||
+                       (u.email && u.email.toLowerCase().includes(query)) ||
+                       (u.ff_ign && u.ff_ign.toLowerCase().includes(query)) ||
+                       (u.ff_uid && String(u.ff_uid).includes(query)) ||
+                       uid.toLowerCase().includes(query);
+            });
+            renderPlayersItems(filtered);
+        }
+
+        async function loadModPlayers() {
+            const listEl = document.getElementById('mod-players-list');
+            if (!listEl) return;
+            const snap = await db.ref('users').once('value');
+            const us = snap.val() || {};
+            cachedPlayersList = Object.entries(us);
+            renderPlayersItems(cachedPlayersList);
+        }
+
+        function renderPlayersItems(list) {
+            const listEl = document.getElementById('mod-players-list');
+            if (!listEl) return;
+
+            let filtered = list;
+            if (curPlayerFilter === 'Warned') {
+                filtered = filtered.filter(([, u]) => u.status === 'warned' || (u.warnings && Object.keys(u.warnings).length > 0));
+            } else if (curPlayerFilter === 'Banned') {
+                filtered = filtered.filter(([, u]) => u.status === 'banned');
+            } else if (curPlayerFilter === 'Active') {
+                filtered = filtered.filter(([, u]) => u.status !== 'banned' && u.status !== 'warned');
+            }
+
+            if (!filtered.length) {
+                listEl.innerHTML = '<div class="card" style="text-align:center;padding:32px 20px"><p style="color:var(--text3);font-size:13px">No players found</p></div>';
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(([uid, u]) => {
+                const warnCount = u.warnings ? Object.keys(u.warnings).length : (u.warnings_count || 0);
+                const isBanned = u.status === 'banned';
+                const isWarned = u.status === 'warned' || warnCount > 0;
+
+                return `
+                <div class="card fade-up" style="padding:14px;margin-bottom:10px;border-color:${isBanned ? 'rgba(239,68,68,0.4)' : isWarned ? 'rgba(234,179,8,0.4)' : 'var(--border3)'}">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                        <div>
+                            <p style="font-weight:800;font-size:14px">${u.username || 'Player'} <span class="badge ${isBanned ? 'badge-banned' : isWarned ? 'badge-warned' : 'badge-completed'}" style="font-size:8px">${isBanned ? '🚫 BANNED' : isWarned ? `⚠️ WARNED (${warnCount})` : 'ACTIVE'}</span></p>
+                            <p style="font-size:11px;color:var(--text4);margin-top:2px">${u.email || 'No email registered'}</p>
+                            <p style="font-size:10.5px;color:var(--cyan);margin-top:2px"><i class="fas fa-gamepad" style="margin-right:4px"></i>IGN: <strong>${u.ff_ign || u.game_name || 'Not Set'}</strong> • UID: <code style="color:var(--text)">${u.ff_uid || u.game_uid || 'N/A'}</code></p>
+                        </div>
+                        <div style="text-align:right">
+                            <span class="badge" style="background:rgba(139,92,246,0.12);color:var(--violet);font-size:9px">🎟️ ${u.free_passes||0} Passes</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:6px;margin-top:10px">
+                        <button onclick="openIssueWarningModal('${uid}','${u.username||'Player'}')" class="btn btn-warning btn-sm" style="flex:1"><i class="fas fa-exclamation-triangle"></i>Warn</button>
+                        ${isBanned 
+                            ? `<button onclick="unbanPlayerAccount('${uid}','${u.username||'Player'}')" class="btn btn-success btn-sm" style="flex:1"><i class="fas fa-check"></i>Unban</button>`
+                            : `<button onclick="banPlayerAccount('${uid}','${u.username||'Player'}')" class="btn btn-danger btn-sm" style="flex:1"><i class="fas fa-ban"></i>Ban</button>`
+                        }
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function openIssueWarningModal(uid, name) {
+            if (!checkPermOrAlert('manage_reports')) return;
+            document.getElementById('warn-target-uid').value = uid;
+            document.getElementById('warn-target-name').textContent = name;
+            document.getElementById('warn-target-info').textContent = 'UID: ' + uid;
+            document.getElementById('warn-note').value = '';
+            document.getElementById('issueWarningModal').style.display = 'flex';
+        }
+
+        function closeIssueWarningModal() {
+            document.getElementById('issueWarningModal').style.display = 'none';
+        }
+
+        document.getElementById('issueWarningForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const uid = document.getElementById('warn-target-uid').value;
+            const category = document.getElementById('warn-category').value;
+            const note = document.getElementById('warn-note').value.trim();
+
+            try {
+                const warnKey = db.ref(`users/${uid}/warnings`).push().key;
+                await db.ref(`users/${uid}/warnings/${warnKey}`).set({
+                    id: warnKey,
+                    category,
+                    note,
+                    issued_by: currentMod?.username || 'Staff Moderator',
+                    created_at: new Date().toISOString()
+                });
+                await db.ref(`users/${uid}/status`).set('warned');
+                showToast('Official Warning Issued to Player! ⚠️');
+                closeIssueWarningModal();
+                loadModPlayers();
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        });
+
+        async function banPlayerAccount(uid, name) {
+            if (!checkPermOrAlert('ban_players')) return;
+            const reason = prompt(`Reason for suspending/banning ${name}:`, 'Cheating or repeated rule violations');
+            if (!reason) return;
+            try {
+                await db.ref(`users/${uid}`).update({
+                    status: 'banned',
+                    ban_reason: reason,
+                    banned_by: currentMod?.username || 'Mod',
+                    banned_at: new Date().toISOString()
+                });
+                showToast(`Player ${name} has been BANNED! 🚫`);
+                loadModPlayers();
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        }
+
+        async function unbanPlayerAccount(uid, name) {
+            if (!checkPermOrAlert('ban_players')) return;
+            if (!confirm(`Unban and restore account for ${name}?`)) return;
+            try {
+                await db.ref(`users/${uid}`).update({ status: 'active' });
+                showToast(`Player ${name} unbanned! 🟢`);
+                loadModPlayers();
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 5. REPORTS, DISPUTES & EVIDENCE VERIFICATION
+        // ══════════════════════════════════════════════════════════════
+        async function renderModDisputes(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div class="section-title"><i class="fas fa-shield-halved" style="color:var(--red)"></i>Reports & Match Disputes</div>
+            
+            <div class="tab-bar">
+                <div class="tab ${curDisputeTab==='tickets'?'active':''}" onclick="setDisputeTab('tickets')">Player Tickets</div>
+                <div class="tab ${curDisputeTab==='disputes'?'active':''}" onclick="setDisputeTab('disputes')">Match Claims</div>
+                <div class="tab ${curDisputeTab==='resolved'?'active':''}" onclick="setDisputeTab('resolved')">Resolved History</div>
+            </div>
+
+            <div id="disputes-list-container" class="space-y"><div style="text-align:center;padding:40px"><div class="neon-spinner"></div></div></div>
+            </div>`;
+
+            loadDisputesData();
+        }
+
+        function setDisputeTab(t) {
+            curDisputeTab = t;
+            document.querySelectorAll('#modDisputesPage .tab-bar .tab').forEach(el => el.classList.toggle('active', el.textContent.toLowerCase().includes(t)));
+            loadDisputesData();
+        }
+
+        async function loadDisputesData() {
+            const container = document.getElementById('disputes-list-container');
+            if (!container) return;
+
+            if (curDisputeTab === 'tickets') {
+                const snap = await db.ref('support_tickets').once('value');
+                const tickets = snap.val() || {};
+                const list = Object.entries(tickets).filter(([, t]) => t.status !== 'resolved').reverse();
+                if (!list.length) {
+                    container.innerHTML = '<div class="card" style="text-align:center;padding:32px 20px"><p style="color:var(--text3);font-size:13px">No open player support reports</p></div>';
+                    return;
+                }
+                container.innerHTML = list.map(([id, t]) => `
+                <div class="card fade-up" style="padding:14px;margin-bottom:10px">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+                        <div>
+                            <p style="font-weight:800;font-size:13.5px">${t.category || 'Player Report'}</p>
+                            <p style="font-size:11px;color:var(--text3)"><i class="fas fa-user" style="margin-right:4px"></i>From: <strong>${t.username || t.email || 'User'}</strong></p>
+                        </div>
+                        <span class="badge badge-upcoming" style="font-size:8px">${t.status || 'Open'}</span>
+                    </div>
+                    <p style="font-size:12px;color:var(--text);margin:8px 0;background:var(--bg4);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border3)">${t.description || t.message || 'No description'}</p>
+                    <div style="display:flex;gap:6px;margin-top:8px">
+                        <button onclick="resolveSupportTicket('${id}')" class="btn btn-success btn-sm" style="flex:1"><i class="fas fa-check"></i>Mark Resolved</button>
+                        <button onclick="dismissSupportTicket('${id}')" class="btn btn-outline btn-sm" style="flex:1"><i class="fas fa-times"></i>Dismiss</button>
+                    </div>
+                </div>`).join('');
+            } else if (curDisputeTab === 'disputes') {
+                const snap = await db.ref('match_disputes').once('value');
+                const disps = snap.val() || {};
+                const list = Object.entries(disps).filter(([, d]) => d.status !== 'resolved').reverse();
+                if (!list.length) {
+                    container.innerHTML = '<div class="card" style="text-align:center;padding:32px 20px"><p style="color:var(--text3);font-size:13px">No active match disputes submitted</p></div>';
+                    return;
+                }
+                container.innerHTML = list.map(([id, d]) => `
+                <div class="card fade-up" style="padding:14px;margin-bottom:10px">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+                        <div>
+                            <p style="font-weight:800;font-size:13.5px">Match Dispute: ${d.reason || 'Rule Violation'}</p>
+                            <p style="font-size:11px;color:var(--text3)">Player: <strong>${d.username || 'User'}</strong> • Match ID: ${d.tournament_id || 'N/A'}</p>
+                        </div>
+                        <span class="badge badge-live" style="font-size:8px">Disputed</span>
+                    </div>
+                    ${d.proof_url ? `
+                    <div style="margin:8px 0;display:flex;align-items:center;gap:10px">
+                        <img src="${sanitizeUrl(d.proof_url)}" style="width:64px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="openProofViewer('${d.proof_url}')">
+                        <button type="button" onclick="openProofViewer('${d.proof_url}')" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 8px;font-size:10px"><i class="fas fa-search-plus"></i>Inspect Evidence</button>
+                    </div>` : ''}
+                    <div style="display:flex;gap:6px;margin-top:8px">
+                        <button onclick="resolveMatchDispute('${id}')" class="btn btn-success btn-sm" style="flex:1"><i class="fas fa-check"></i>Resolve & Accept</button>
+                        <button onclick="dismissMatchDispute('${id}')" class="btn btn-outline btn-sm" style="flex:1"><i class="fas fa-times"></i>Dismiss Dispute</button>
+                    </div>
+                </div>`).join('');
+            } else {
+                container.innerHTML = '<div class="card" style="text-align:center;padding:32px 20px"><i class="fas fa-check-circle" style="font-size:28px;color:var(--green);margin-bottom:8px"></i><p style="color:var(--text3);font-size:13px">Resolved history is archived in database logs.</p></div>';
+            }
+        }
+
+        async function resolveSupportTicket(id) {
+            if (!checkPermOrAlert('manage_reports')) return;
+            const reply = prompt('Enter response / resolution note for player:');
+            if (reply === null) return;
+            await db.ref(`support_tickets/${id}`).update({ status: 'resolved', reply: reply || 'Issue resolved by staff.', resolved_at: new Date().toISOString() });
+            showToast('Ticket Marked Resolved! ✅');
+            loadDisputesData();
+        }
+
+        async function dismissSupportTicket(id) {
+            if (!checkPermOrAlert('manage_reports')) return;
+            await db.ref(`support_tickets/${id}`).update({ status: 'resolved', reply: 'Dismissed after review.', resolved_at: new Date().toISOString() });
+            showToast('Ticket Dismissed');
+            loadDisputesData();
+        }
+
+        async function resolveMatchDispute(id) {
+            if (!checkPermOrAlert('manage_reports')) return;
+            await db.ref(`match_disputes/${id}`).update({ status: 'resolved', resolved_by: currentMod?.username || 'Mod', resolved_at: new Date().toISOString() });
+            showToast('Match Dispute Resolved! ✅');
+            loadDisputesData();
+        }
+
+        async function dismissMatchDispute(id) {
+            if (!checkPermOrAlert('manage_reports')) return;
+            await db.ref(`match_disputes/${id}`).update({ status: 'resolved', resolution: 'Dismissed', resolved_at: new Date().toISOString() });
+            showToast('Dispute Dismissed');
+            loadDisputesData();
+        }
+
+        function openProofViewer(url) {
+            document.getElementById('proof-view-img').src = sanitizeUrl(url);
+            document.getElementById('proof-download-link').href = sanitizeUrl(url);
+            document.getElementById('proofViewerModal').style.display = 'flex';
+        }
+
+        function closeProofViewerModal() {
+            document.getElementById('proofViewerModal').style.display = 'none';
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 6. LIVE TOURNAMENT CHAT MODERATION
+        // ══════════════════════════════════════════════════════════════
+        let activeChatTid = null;
+        async function renderModChat(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div class="section-title"><i class="fas fa-comments" style="color:var(--violet)"></i>Tournament Chat Moderation</div>
+            
+            <div class="card" style="padding:14px;margin-bottom:14px">
+                <label class="label">Select Active Match Chat</label>
+                <select id="chat-tournament-select" class="input" onchange="switchModChatRoom(this.value)">
+                    <option value="">Loading match rooms...</option>
+                </select>
+            </div>
+
+            <!-- Chat Room Messages Container -->
+            <div class="card" style="padding:14px;min-height:300px;max-height:420px;display:flex;flex-direction:column;justify-content:space-between">
+                <div id="mod-chat-messages" style="overflow-y:auto;max-height:320px;padding-right:4px">
+                    <p style="text-align:center;color:var(--text4);padding:40px 10px;font-size:12px">Select a match above to monitor live chat</p>
+                </div>
+                <div style="margin-top:10px;display:flex;gap:6px">
+                    <input type="text" id="mod-announcement-input" placeholder="Broadcast Official Mod Announcement..." class="input" style="padding:10px">
+                    <button type="button" onclick="sendModChatAnnouncement()" class="btn btn-primary btn-sm" style="width:auto;padding:10px 14px"><i class="fas fa-bullhorn"></i></button>
+                </div>
+            </div>
+            </div>`;
+
+            // Populate match rooms
+            const snap = await db.ref('tournaments').once('value');
+            const ts = snap.val() || {};
+            const select = document.getElementById('chat-tournament-select');
+            if (select) {
+                const list = Object.entries(ts);
+                select.innerHTML = '<option value="">-- Choose Match Chat Room --</option>' + list.map(([id, t]) => `
+                    <option value="${id}">${t.title || 'Tournament'} (${t.status})</option>
+                `).join('');
+                if (list.length) {
+                    select.value = list[0][0];
+                    switchModChatRoom(list[0][0]);
+                }
+            }
+        }
+
+        function switchModChatRoom(tid) {
+            activeChatTid = tid;
+            const msgContainer = document.getElementById('mod-chat-messages');
+            if (!msgContainer || !tid) return;
+
+            db.ref(`tournament_chats/${tid}`).limitToLast(40).on('value', snap => {
+                const msgs = snap.val() || {};
+                const list = Object.entries(msgs);
+                if (!list.length) {
+                    msgContainer.innerHTML = '<p style="text-align:center;color:var(--text4);padding:40px 10px;font-size:12px">No messages in this match chat yet</p>';
+                    return;
+                }
+                msgContainer.innerHTML = list.map(([msgId, m]) => `
+                <div style="padding:8px 10px;margin-bottom:8px;background:var(--bg4);border-radius:var(--radius-sm);border:1px solid var(--border3);display:flex;justify-content:space-between;align-items:start">
+                    <div>
+                        <div style="display:flex;align-items:center;gap:6px">
+                            <span style="font-size:12px;font-weight:700;color:var(--cyan)">${m.username || 'Player'}</span>
+                            ${m.is_mod ? '<span class="badge badge-upcoming" style="font-size:7px">MOD</span>' : ''}
+                            <span style="font-size:9px;color:var(--text4)">${m.created_at ? new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</span>
+                        </div>
+                        <p style="font-size:12px;color:var(--text);margin-top:3px">${m.text || ''}</p>
+                    </div>
+                    <div style="display:flex;gap:4px">
+                        <button onclick="openMuteUserModal('${m.uid || ''}','${m.username || 'User'}')" class="btn btn-ghost btn-sm" style="color:var(--yellow);padding:2px 5px" title="Timeout User"><i class="fas fa-volume-mute"></i></button>
+                        <button onclick="deleteChatMessage('${activeChatTid}','${msgId}')" class="btn btn-ghost btn-sm" style="color:var(--red);padding:2px 5px" title="Delete Message"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`).join('');
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+            });
+        }
+
+        async function deleteChatMessage(tid, msgId) {
+            if (!confirm('Purge this message?')) return;
+            await db.ref(`tournament_chats/${tid}/${msgId}`).remove();
+            showToast('Message Deleted');
+        }
+
+        function openMuteUserModal(uid, username) {
+            document.getElementById('mute-target-uid').value = uid;
+            document.getElementById('mute-target-name').textContent = `Mute ${username} (${uid ? uid.slice(0,8) : 'UID'})`;
+            document.getElementById('muteUserModal').style.display = 'flex';
+        }
+
+        function closeMuteUserModal() {
+            document.getElementById('muteUserModal').style.display = 'none';
+        }
+
+        document.getElementById('muteUserForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const uid = document.getElementById('mute-target-uid').value;
+            const dur = document.getElementById('mute-duration').value;
+            const reason = document.getElementById('mute-reason').value.trim();
+
+            if (!uid) return showToast('User UID not provided', true);
+            const until = dur === 'permanent' ? 'permanent' : new Date(Date.now() + Number(dur) * 60 * 1000).toISOString();
+
+            try {
+                await db.ref(`muted_users/${uid}`).set({
+                    muted_until: until,
+                    reason,
+                    muted_by: currentMod?.username || 'Mod',
+                    created_at: new Date().toISOString()
+                });
+                showToast('User has been timed out from chat! 🔇');
+                closeMuteUserModal();
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        });
+
+        async function sendModChatAnnouncement() {
+            if (!activeChatTid) return showToast('Select a match room first', true);
+            const input = document.getElementById('mod-announcement-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const msgRef = db.ref(`tournament_chats/${activeChatTid}`).push();
+            await msgRef.set({
+                id: msgRef.key,
+                username: `[MOD] ${currentMod?.username || 'Operations'}`,
+                text: '📢 ' + text,
+                is_mod: true,
+                created_at: new Date().toISOString()
+            });
+            input.value = '';
+            showToast('Announcement Broadcasted in Chat! 📢');
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 7. ONESIGNAL PUSH NOTIFICATIONS BROADCAST
+        // ══════════════════════════════════════════════════════════════
+        async function renderModPush(c) {
+            c.innerHTML = `<div style="padding:20px" class="fade-in">
+            <div class="section-title"><i class="fas fa-paper-plane" style="color:var(--cyan)"></i>OneSignal & Push Alerts</div>
+            
+            <!-- Push Broadcast Form -->
+            <div class="card fade-up stagger-1" style="margin-bottom:16px">
+                <form id="modPushForm" class="space-y">
+                    <div>
+                        <label class="label">Target Audience *</label>
+                        <select id="mpush-target" class="input" onchange="onModPushTargetChange(this.value)">
+                            <option value="all">📢 All App Users (Global OneSignal Broadcast)</option>
+                            <option value="tournament">🏆 Joined Players of Specific Match</option>
+                        </select>
+                    </div>
+                    <div id="mpush-tournament-box" style="display:none">
+                        <label class="label">Select Match</label>
+                        <select id="mpush-tid" class="input"></select>
+                    </div>
+                    
+                    <!-- Quick Presets -->
+                    <div>
+                        <label class="label">Quick Templates</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                            <button type="button" onclick="applyPushTemplate('room_ready')" class="btn btn-outline btn-sm" style="font-size:10px"><i class="fas fa-door-open"></i>Room ID Live</button>
+                            <button type="button" onclick="applyPushTemplate('match_10min')" class="btn btn-outline btn-sm" style="font-size:10px"><i class="fas fa-clock"></i>10 Min Warning</button>
+                            <button type="button" onclick="applyPushTemplate('winner_out')" class="btn btn-outline btn-sm" style="font-size:10px"><i class="fas fa-trophy"></i>Winner Declared</button>
+                            <button type="button" onclick="applyPushTemplate('maintenance')" class="btn btn-outline btn-sm" style="font-size:10px"><i class="fas fa-wrench"></i>Time Shift Alert</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="label">Push Notification Title *</label>
+                        <input type="text" id="mpush-title" placeholder="e.g. 🔴 Room ID & Password Published!" class="input" required>
+                    </div>
+                    <div>
+                        <label class="label">Message Body *</label>
+                        <textarea id="mpush-message" class="textarea" rows="3" placeholder="Match room credentials have been issued. Join your lobby now!" required></textarea>
+                    </div>
+                    <div>
+                        <label class="label">Banner Image URL <span style="font-size:9px;color:var(--text4)">(Optional)</span></label>
+                        <input type="url" id="mpush-image" placeholder="https://images.unsplash.com/..." class="input">
+                    </div>
+                    <div>
+                        <label class="label">Action URL / Deep Link <span style="font-size:9px;color:var(--text4)">(Optional)</span></label>
+                        <input type="text" id="mpush-url" placeholder="index.html or custom action" class="input">
+                    </div>
+                    <div style="padding:10px;background:var(--bg4);border-radius:var(--radius-sm);font-size:11px;color:var(--text3)">
+                        <i class="fas fa-mobile-alt" style="color:var(--cyan);margin-right:6px"></i>Dispatches directly via <strong>OneSignal REST API</strong> and triggers <strong>Median APK OneSignal Plugin</strong>.
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-bolt"></i>Dispatch Push Notification</button>
+                </form>
+            </div>
+
+            <!-- Broadcast History -->
+            <div class="card fade-up stagger-2">
+                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-history" style="color:var(--violet)"></i>Broadcast History</h3>
+                <div id="mod-push-history" class="space-y"><div style="text-align:center;padding:20px"><div class="neon-spinner"></div></div></div>
+            </div>
+            </div>`;
+
+            // Load tournaments into select
+            const [tSnap, histSnap] = await Promise.all([
+                db.ref('tournaments').once('value'),
+                db.ref('push_notifications_history').limitToLast(8).once('value')
+            ]);
+            const ts = tSnap.val() || {};
+            const hist = histSnap.val() || {};
+
+            const sel = document.getElementById('mpush-tid');
+            if (sel) {
+                sel.innerHTML = Object.entries(ts).map(([id, t]) => `
+                    <option value="${id}">${t.title || 'Tournament'} (${t.game_name || 'Free Fire'})</option>
+                `).join('');
+            }
+
+            const histEl = document.getElementById('mod-push-history');
+            const hList = Object.entries(hist).reverse();
+            if (!hList.length) {
+                histEl.innerHTML = '<p style="font-size:11px;color:var(--text4);text-align:center;padding:10px">No push broadcasts recorded yet</p>';
+            } else {
+                histEl.innerHTML = hList.map(([, p]) => `
+                    <div style="padding:10px;background:var(--bg4);border:1px solid var(--border3);border-radius:var(--radius-sm)">
+                        <div style="display:flex;justify-content:space-between;align-items:start">
+                            <p style="font-weight:700;font-size:12px;color:var(--cyan)">${p.title || 'Broadcast'}</p>
+                            <span class="badge badge-upcoming" style="font-size:8px">${p.target || 'All'}</span>
+                        </div>
+                        <p style="font-size:11px;color:var(--text3);margin-top:2px">${p.message || ''}</p>
+                        <p style="font-size:9px;color:var(--text4);margin-top:4px"><i class="fas fa-clock" style="margin-right:3px"></i>${new Date(p.created_at).toLocaleString()} • Sent by: ${p.sender_name || 'Staff'}</p>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('modPushForm')?.addEventListener('submit', handleModPushSubmit);
+        }
+
+        function onModPushTargetChange(val) {
+            const box = document.getElementById('mpush-tournament-box');
+            if (box) box.style.display = val === 'tournament' ? 'block' : 'none';
+        }
+
+        function applyPushTemplate(type) {
+            const titleEl = document.getElementById('mpush-title');
+            const msgEl = document.getElementById('mpush-message');
+            if (type === 'room_ready') {
+                titleEl.value = '🔴 Match Room Credentials Live!';
+                msgEl.value = 'Room ID and Password are now published in your match room. Join lobby before start time!';
+            } else if (type === 'match_10min') {
+                titleEl.value = '⏰ Match Starting in 10 Minutes!';
+                msgEl.value = 'Assemble your squad and enter the custom room immediately. Late players will be disqualified!';
+            } else if (type === 'winner_out') {
+                titleEl.value = '👑 Tournament Champions Declared!';
+                msgEl.value = 'Final match results verified and prizes distributed. Check the leaderboard in Arena!';
+            } else if (type === 'maintenance') {
+                titleEl.value = '📢 Tournament Schedule Update';
+                msgEl.value = 'Please note the revised match start time. Check the tournament details in app!';
+            }
+        }
+
+        async function dispatchModPushBackend(payload) {
+            try {
+                const sendPushFn = firebase.app().functions('asia-southeast1').httpsCallable('sendOneSignalNotification');
+                const res = await sendPushFn(payload);
+                return res.data;
+            } catch (cfErr) {
+                console.warn('[Cloud Function fallback to /api/send-notification]:', cfErr.message);
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch('/api/send-notification', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'Notification dispatch failed');
+                return d;
+            }
+        }
+
+        async function handleModPushSubmit(e) {
+            e.preventDefault();
+            if (!checkPermOrAlert('send_notifications')) return;
+
+            const target = document.getElementById('mpush-target').value;
+            const tid = document.getElementById('mpush-tid')?.value;
+            const title = document.getElementById('mpush-title').value.trim();
+            const message = document.getElementById('mpush-message').value.trim();
+            const image = document.getElementById('mpush-image').value.trim();
+            const url = document.getElementById('mpush-url').value.trim();
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dispatching via Secure Backend...';
+            btn.disabled = true;
+
+            try {
+                const res = await dispatchModPushBackend({
+                    title,
+                    message,
+                    target,
+                    tournament_id: target === 'tournament' ? tid : null,
+                    image_url: image || null,
+                    url: url || null
+                });
+
+                showToast('🎉 ' + (res.message || 'Push Notification Dispatched to ' + (target === 'all' ? 'All Devices!' : 'Match Players!')));
+                renderModPush(document.getElementById('modPushPage'));
+            } catch (err) {
+                console.error('[Mod Push Error]:', err);
+                const safeMsg = err.message || 'Notification dispatch failed.';
+                showToast('Push Error: ' + safeMsg, true);
+            } finally {
+                btn.innerHTML = '<i class="fas fa-bolt"></i>Dispatch Push Notification';
+                btn.disabled = false;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 8. CREATE TOURNAMENT
+        // ══════════════════════════════════════════════════════════════
+        function renderModCreate(c) {
+            c.innerHTML = `
+            <div style="padding:20px" class="fade-in">
+                <div class="section-title"><i class="fas fa-plus-circle" style="color:var(--cyan)"></i>Create Tournament</div>
+                <div class="card fade-up">
+                    <form id="modCreateForm" class="space-y">
+                        <div><label class="label">Tournament Title *</label><input type="text" id="c-title" placeholder="Free Fire Clash Squad Weekly #1" class="input" required></div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div><label class="label">Game</label><input type="text" id="c-game" value="Free Fire" class="input" required></div>
+                            <div><label class="label">Match Mode</label><input type="text" id="c-mode" value="Battle Royale (Squad)" class="input" required></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div><label class="label">Map</label><input type="text" id="c-map" value="Bermuda" class="input"></div>
+                            <div><label class="label">Max Slots</label><input type="number" id="c-slots" value="48" class="input" min="2"></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div><label class="label">Entry Fee (৳) *</label><input type="number" id="c-fee" value="20" class="input" min="0" required></div>
+                            <div><label class="label">Prize Pool (৳) *</label><input type="number" id="c-prize" value="100" class="input" min="0" required></div>
+                        </div>
+                        <div><label class="label">Match Date & Time *</label><input type="datetime-local" id="c-time" class="input" required></div>
+                        <div><label class="label">Thumbnail / Banner URL</label><input type="url" id="c-thumb" placeholder="https://images.unsplash.com/..." class="input"></div>
+                        <div><label class="label">Rules & Notes</label><textarea id="c-rules" class="textarea">1. Standard competitive esports settings apply.
+2. Emulator players are strictly prohibited.
+3. Teaming up or using glitches results in instant DQ.</textarea></div>
+                        <button type="submit" class="btn btn-primary btn-lg" style="margin-top:16px"><i class="fas fa-plus"></i>Publish Tournament</button>
+                    </form>
+                </div>
+            </div>`;
+
+            const now = new Date(Date.now() + 2 * 3600 * 1000);
+            const iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            const timeEl = document.getElementById('c-time');
+            if (timeEl) timeEl.value = iso;
+
+            document.getElementById('modCreateForm')?.addEventListener('submit', async e => {
+                e.preventDefault();
+                if (!checkPermOrAlert('edit_tournaments')) return;
+
+                const btn = e.target.querySelector('button[type="submit"]');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+                btn.disabled = true;
+
+                try {
+                    const newRef = db.ref('tournaments').push();
+                    const newId = newRef.key;
+                    const data = {
+                        id: newId,
+                        title: document.getElementById('c-title').value.trim(),
+                        game_name: document.getElementById('c-game').value.trim(),
+                        game_type: document.getElementById('c-mode').value.trim(),
+                        map: document.getElementById('c-map').value.trim(),
+                        max_participants: Number(document.getElementById('c-slots').value) || 48,
+                        entry_fee: Number(document.getElementById('c-fee').value) || 0,
+                        prize_pool: Number(document.getElementById('c-prize').value) || 0,
+                        match_time: new Date(document.getElementById('c-time').value).toISOString(),
+                        thumbnail_url: document.getElementById('c-thumb').value.trim(),
+                        rules: document.getElementById('c-rules').value.trim(),
+                        status: 'Upcoming',
+                        created_by: currentMod?.uid || 'mod',
+                        created_at: new Date().toISOString()
+                    };
+
+                    await newRef.set(data);
+                    showToast('Tournament Published Successfully! 🏆');
+                    navTo('modTournamentPage');
+                } catch(err) {
+                    showToast(err.message || 'Failed to create tournament', true);
+                    btn.innerHTML = '<i class="fas fa-plus"></i>Publish Tournament';
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 9. MANAGE TOURNAMENT ROOM, ROSTER & PROOFS
+        // ══════════════════════════════════════════════════════════════
+        async function renderModManage(c) {
+            if (!currentTid) {
+                c.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)"><p>No tournament selected</p><button onclick="navTo(\'modTournamentPage\')" class="btn btn-primary btn-sm" style="width:auto;margin:12px auto 0">Back to Tournaments</button></div>';
+                return;
+            }
+            c.innerHTML = `<div style="padding:20px" class="fade-in" id="mod-manage-box"><div style="text-align:center;padding:60px"><div class="neon-spinner"></div></div></div>`;
+
+            const el = document.getElementById('mod-manage-box');
+            const [tSnap, partsSnap] = await Promise.all([
+                db.ref(`tournaments/${currentTid}`).once('value'),
+                db.ref(`participants/${currentTid}`).once('value')
+            ]);
+            const t = tSnap.val();
+            if (!t) {
+                el.innerHTML = '<p style="color:var(--red);text-align:center">Tournament not found</p>';
+                return;
+            }
+            const parts = partsSnap.val() || {};
+            let opts = '', pHtml = '', proofHtml = '';
+
+            for (const pId in parts) {
+                const uSnap = await db.ref(`users/${pId}`).once('value');
+                const u = uSnap.val() || {};
+                const isWinner = parts[pId].status === 'Winner';
+                const isDisq = parts[pId].status === 'Disqualified';
+
+                opts += `<option value="${pId}">${u.username || 'Player'} (${parts[pId].game_name || parts[pId].game_uid || 'IGN'})</option>`;
+                
+                pHtml += `
+                <div class="card" style="padding:12px;margin-bottom:8px;background:var(--bg4);border:1px solid var(--border3)">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                        <span style="font-weight:700;font-size:13px">${u.username || 'Player'}</span>
+                        <span class="badge ${isWinner ? 'badge-completed' : isDisq ? 'badge-cancelled' : 'badge-upcoming'}" style="font-size:9px">${isWinner ? '👑 Winner' : isDisq ? '❌ Disqualified' : 'Active'}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <p style="font-size:11px;color:var(--text3)">IGN: <strong style="color:var(--cyan)">${parts[pId].game_name || 'N/A'}</strong> • UID: <strong style="color:var(--text)">${parts[pId].game_uid || 'N/A'}</strong>${parts[pId].team_name ? ' • Team: ' + parts[pId].team_name : ''}</p>
+                        ${!isWinner && !isDisq ? `<button type="button" onclick="disqualifyParticipant('${currentTid}','${pId}','${u.username||'Player'}')" class="btn btn-ghost btn-sm" style="color:var(--red);padding:2px 6px;font-size:10px" title="Disqualify"><i class="fas fa-user-times"></i>DQ</button>` : ''}
+                    </div>
+                </div>`;
+
+                if (parts[pId].proof_url) {
+                    proofHtml += `
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg3);border-radius:var(--radius-sm);margin-bottom:6px">
+                        <img src="${sanitizeUrl(parts[pId].proof_url)}" style="width:48px;height:36px;object-fit:cover;border-radius:4px;cursor:pointer" onclick="openProofViewer('${parts[pId].proof_url}')">
+                        <div style="flex:1">
+                            <p style="font-size:11px;font-weight:700">${u.username || 'Player'} Proof</p>
+                            <p style="font-size:9px;color:var(--text4)">Submitted at: ${parts[pId].proof_submitted_at ? new Date(parts[pId].proof_submitted_at).toLocaleTimeString() : 'N/A'}</p>
+                        </div>
+                        <button type="button" onclick="openProofViewer('${parts[pId].proof_url}')" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 8px;font-size:10px"><i class="fas fa-search"></i>Inspect</button>
+                    </div>`;
+                }
+            }
+
+            el.innerHTML = `
+            <button onclick="navTo('modTournamentPage')" class="btn btn-ghost btn-sm" style="margin-bottom:14px;color:var(--text3)"><i class="fas fa-arrow-left"></i> Back</button>
+            <h2 style="font-size:20px;font-weight:900;margin-bottom:2px">${t.title || 'Tournament'}</h2>
+            <p style="font-size:11px;color:var(--text3);margin-bottom:16px"><i class="fas fa-gamepad" style="margin-right:4px"></i>${t.game_name || 'Game'} • ${t.game_type || 'Match'}</p>
+            
+            <!-- Room Credentials Form -->
+            <div class="card fade-up stagger-1" style="margin-bottom:14px">
+                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-door-open" style="color:var(--cyan)"></i>Room Credentials & Live Status</h3>
+                <form id="modRoomForm" class="space-y">
+                    <div><label class="label">Room ID</label><input type="text" id="m-roomid" value="${t.room_id||''}" placeholder="Enter Free Fire Room ID" class="input"></div>
+                    <div><label class="label">Room Password</label><input type="text" id="m-roompass" value="${t.room_password||''}" placeholder="Enter Room Password" class="input"></div>
+                    <div>
+                        <label class="label">Status</label>
+                        <select id="m-status" class="input">
+                            <option value="Upcoming" ${t.status==='Upcoming'?'selected':''}>Upcoming</option>
+                            <option value="Live" ${t.status==='Live'?'selected':''}>🔴 Live (Push Room to Players)</option>
+                            <option value="Paused" ${t.status==='Paused'?'selected':''}>⏸️ Paused</option>
+                            <option value="Completed" ${t.status==='Completed'?'selected':''}>✅ Completed</option>
+                            <option value="Cancelled" ${t.status==='Cancelled'?'selected':''}>❌ Cancelled</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i>Update Room & Status</button>
+                </form>
+            </div>
+
+            <!-- Proof Gallery -->
+            ${proofHtml ? `
+            <div class="card fade-up stagger-2" style="margin-bottom:14px">
+                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-image" style="color:var(--cyan)"></i>Submitted Match Proofs</h3>
+                <div style="max-height:220px;overflow-y:auto">${proofHtml}</div>
+            </div>` : ''}
+
+            <!-- Declare Winner -->
+            ${t.status !== 'Completed' ? `
+            <div class="card fade-up stagger-2" style="margin-bottom:14px">
+                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-crown" style="color:var(--yellow)"></i>Declare Winner & Payout</h3>
+                <form id="modWinnerForm" class="space-y">
+                    <div><label class="label">Select Winner Player</label><select id="mod-winner-select" class="input"><option value="">Choose winning player...</option>${opts}</select></div>
+                    <div style="padding:10px;background:var(--green-glow);border:1px solid rgba(34,197,94,0.3);border-radius:var(--radius-sm);font-size:11px;color:var(--green)">
+                        <i class="fas fa-gift" style="margin-right:6px"></i>Prize <strong>${fmt(t.prize_pool || t.prize?.total_pool)}</strong> will be credited directly to winner's wallet.
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-trophy"></i>Confirm & Payout Winner</button>
+                </form>
+            </div>` : `<div class="card" style="text-align:center;margin-bottom:14px;background:var(--green-glow);color:var(--green);font-weight:700;font-size:13px"><i class="fas fa-check-circle" style="margin-right:6px"></i>Tournament Completed & Prize Awarded</div>`}
+
+            <!-- Participants Roster -->
+            <div class="card fade-up stagger-3">
+                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-users" style="color:var(--violet)"></i>Player Roster (${Object.keys(parts).length})</h3>
+                <div style="max-height:320px;overflow-y:auto">${pHtml || '<p style="text-align:center;color:var(--text4);padding:20px;font-size:12px">No participants joined yet</p>'}</div>
+            </div>`;
+
+            document.getElementById('modRoomForm')?.addEventListener('submit', async e => {
+                e.preventDefault();
+                if (!checkPermOrAlert('edit_tournaments')) return;
+
+                const rid = document.getElementById('m-roomid').value.trim();
+                const rpass = document.getElementById('m-roompass').value.trim();
+                const st = document.getElementById('m-status').value;
+                const b = e.target.querySelector('button[type="submit"]');
+                b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                b.disabled = true;
+
+                try {
+                    await db.ref(`tournaments/${currentTid}`).update({ room_id: rid, room_password: rpass, status: st, updated_at: new Date().toISOString() });
+                    showToast('Room Details & Status Updated! ✅');
+                    renderModManage(document.getElementById('modManageTournamentPage'));
+                } catch(err) {
+                    showToast(err.message, true);
+                    b.innerHTML = '<i class="fas fa-save"></i>Update Room & Status';
+                    b.disabled = false;
+                }
+            });
+
+            document.getElementById('modWinnerForm')?.addEventListener('submit', async e => {
+                e.preventDefault();
+                if (!checkPermOrAlert('verify_results')) return;
+
+                const wId = document.getElementById('mod-winner-select').value;
+                if (!wId) return showToast('Please select a winner!', true);
+                if (!confirm('Declare winner? Prize will be credited to winner wallet immediately.')) return;
+
+                try {
+                    const snapT = await db.ref(`tournaments/${currentTid}`).once('value');
+                    const curT = snapT.val();
+                    const snapW = await db.ref(`users/${wId}`).once('value');
+                    const curW = snapW.val();
+                    const prize = Number(curT.prize_pool || curT.prize?.total_pool || 0);
+
+                    const updates = {};
+                    updates[`/tournaments/${currentTid}/status`] = 'Completed';
+                    updates[`/tournaments/${currentTid}/winner_id`] = wId;
+                    updates[`/participants/${currentTid}/${wId}/status`] = 'Winner';
+                    updates[`/users/${wId}/wallet_balance`] = (curW.wallet_balance || 0) + prize;
+                    
+                    const txnKey = db.ref().child('transactions').push().key;
+                    updates[`/transactions/${wId}/${txnKey}`] = {
+                        amount: prize,
+                        type: 'credit',
+                        description: `Tournament Prize: ${curT.title}`,
+                        created_at: new Date().toISOString()
+                    };
+
+                    await db.ref().update(updates);
+                    showToast('Winner Declared & Prize Sent! 👑');
+                    renderModManage(document.getElementById('modManageTournamentPage'));
+                } catch(err) {
+                    showToast('Failed to declare winner', true);
+                }
+            });
+        }
+
+        async function disqualifyParticipant(tid, uid, name) {
+            if (!checkPermOrAlert('manage_players')) return;
+            const reason = prompt(`Reason for disqualifying ${name} from this match:`, 'Rule violation / No-show');
+            if (!reason) return;
+            try {
+                await db.ref(`participants/${tid}/${uid}`).update({
+                    status: 'Disqualified',
+                    disqualify_reason: reason,
+                    disqualified_at: new Date().toISOString()
+                });
+                showToast(`Player ${name} Disqualified! ❌`);
+                renderModManage(document.getElementById('modManageTournamentPage'));
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 10. EDIT TOURNAMENT MODAL (MODERATOR)
+        // ══════════════════════════════════════════════════════════════
+        async function openModEdit(id) {
+            if (!checkPermOrAlert('edit_tournaments')) return;
+
+            const snap = await db.ref(`tournaments/${id}`).once('value');
+            if (!snap.exists()) return showToast('Tournament not found', true);
+            const t = snap.val();
+
+            document.getElementById('medit-id').value = id;
+            document.getElementById('medit-title').value = t.title || '';
+            document.getElementById('medit-game').value = t.game_name || 'Free Fire';
+            document.getElementById('medit-mode').value = t.game_type || 'Battle Royale';
+            document.getElementById('medit-map').value = t.map || 'Bermuda';
+            document.getElementById('medit-slots').value = t.max_participants || 48;
+            document.getElementById('medit-fee').value = t.entry_fee || 0;
+            document.getElementById('medit-prize').value = t.prize_pool || 0;
+            
+            if (t.match_time) {
+                try {
+                    const dt = new Date(t.match_time);
+                    const iso = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                    document.getElementById('medit-time').value = iso;
+                } catch(e) { document.getElementById('medit-time').value = ''; }
+            } else {
+                document.getElementById('medit-time').value = '';
+            }
+
+            document.getElementById('medit-thumb').value = t.thumbnail_url || '';
+            document.getElementById('medit-roomid').value = t.room_id || '';
+            document.getElementById('medit-roompass').value = t.room_password || '';
+            document.getElementById('medit-status').value = t.status || 'Upcoming';
+            document.getElementById('medit-rules').value = t.rules || '';
+
+            document.getElementById('modEditModal').style.display = 'flex';
+        }
+
+        function closeModEditModal() {
+            document.getElementById('modEditModal').style.display = 'none';
+        }
+
+        document.getElementById('modEditForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            if (!checkPermOrAlert('edit_tournaments')) return;
+
+            const id = document.getElementById('medit-id').value;
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+
+            try {
+                const updates = {
+                    title: document.getElementById('medit-title').value.trim(),
+                    game_name: document.getElementById('medit-game').value.trim(),
+                    game_type: document.getElementById('medit-mode').value.trim(),
+                    map: document.getElementById('medit-map').value.trim(),
+                    max_participants: Number(document.getElementById('medit-slots').value) || 48,
+                    entry_fee: Number(document.getElementById('medit-fee').value) || 0,
+                    prize_pool: Number(document.getElementById('medit-prize').value) || 0,
+                    match_time: new Date(document.getElementById('medit-time').value).toISOString(),
+                    thumbnail_url: document.getElementById('medit-thumb').value.trim(),
+                    room_id: document.getElementById('medit-roomid').value.trim(),
+                    room_password: document.getElementById('medit-roompass').value.trim(),
+                    status: document.getElementById('medit-status').value,
+                    rules: document.getElementById('medit-rules').value.trim(),
+                    updated_at: new Date().toISOString()
+                };
+
+                await db.ref(`tournaments/${id}`).update(updates);
+                showToast('Tournament updated successfully! 🏆');
+                closeModEditModal();
+                loadModTournaments();
+            } catch (err) {
+                showToast(err.message || 'Failed to update', true);
+            } finally {
+                btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                btn.disabled = false;
+            }
+        });
+
+        async function deleteModTournament(id) {
+            if (!checkPermOrAlert('edit_tournaments')) return;
+            if (!confirm('Are you sure you want to delete this tournament?')) return;
+            try {
+                await db.ref(`tournaments/${id}`).remove();
+                showToast('Tournament Deleted');
+                loadModTournaments();
+            } catch (e) {
+                showToast('Failed to delete', true);
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 11. GAMES & ESPORTS PRESETS
+        // ══════════════════════════════════════════════════════════════
+        function renderModGames(c) {
+            c.innerHTML = `
+            <div style="padding:20px" class="fade-in">
+                <div class="section-title"><i class="fas fa-gamepad" style="color:var(--cyan)"></i>Supported Esports</div>
+                <div class="space-y">
+                    <div class="card" style="display:flex;align-items:center;gap:14px;padding:16px">
+                        <div style="width:48px;height:48px;border-radius:14px;background:var(--red-glow);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--red)"><i class="fas fa-fire"></i></div>
+                        <div style="flex:1"><p style="font-weight:800;font-size:15px">Free Fire</p><p style="font-size:11px;color:var(--text3)">Battle Royale • Clash Squad • Custom 1v1</p></div>
+                        <span class="badge badge-completed">Active</span>
+                    </div>
+                    <div class="card" style="display:flex;align-items:center;gap:14px;padding:16px">
+                        <div style="width:48px;height:48px;border-radius:14px;background:var(--yellow-glow);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--yellow)"><i class="fas fa-crosshairs"></i></div>
+                        <div style="flex:1"><p style="font-weight:800;font-size:15px">BGMI / PUBG</p><p style="font-size:11px;color:var(--text3)">Erangel Classic • TDM 4v4</p></div>
+                        <span class="badge badge-completed">Active</span>
+                    </div>
+                    <div class="card" style="display:flex;align-items:center;gap:14px;padding:16px">
+                        <div style="width:48px;height:48px;border-radius:14px;background:var(--cyan-glow);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--cyan)"><i class="fas fa-cube"></i></div>
+                        <div style="flex:1"><p style="font-weight:800;font-size:15px">Minecraft</p><p style="font-size:11px;color:var(--text3)">PvP Duels • BedWars 4v4</p></div>
+                        <span class="badge badge-completed">Active</span>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // 12. MODERATOR PROFILE & ACCESS CHECKLIST
+        // ══════════════════════════════════════════════════════════════
+        function renderModProfile(c) {
+            c.innerHTML = `
+            <div style="padding:20px" class="fade-in">
+                <div class="section-title"><i class="fas fa-user-shield" style="color:var(--cyan)"></i>Moderator Profile</div>
+                
+                <div class="card" style="text-align:center;padding:24px;margin-bottom:16px">
+                    <div style="width:72px;height:72px;margin:0 auto 12px;border-radius:50%;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;box-shadow:0 0 30px var(--cyan-glow)"><i class="fas fa-user-shield"></i></div>
+                    <h3 style="font-size:18px;font-weight:900">${currentMod?.username || 'Moderator'}</h3>
+                    <p style="font-size:12px;color:var(--text3);margin-top:2px">${currentMod?.email || ''}</p>
+                    <div style="margin-top:10px"><span class="badge" style="background:var(--cyan-glow);color:var(--cyan);border:1px solid var(--cyan)">${(currentMod?.role || 'Moderator').toUpperCase()}</span></div>
+                </div>
+
+                <!-- Granular Permissions Checklist -->
+                <div class="card" style="margin-bottom:16px;padding:16px">
+                    <h4 style="font-size:13px;font-weight:800;margin-bottom:10px;color:var(--text2)"><i class="fas fa-key" style="color:var(--cyan);margin-right:6px"></i>Assigned Permissions</h4>
+                    <div class="space-y" style="font-size:12px">
+                        ${MOD_PERMISSION_KEYS.map(k => {
+                            const ok = hasPerm(k);
+                            return `
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:var(--radius-sm)">
+                                <span style="text-transform:capitalize">${k.replace(/_/g, ' ')}</span>
+                                <span class="badge ${ok ? 'badge-completed' : 'badge-cancelled'}" style="font-size:8px">${ok ? 'Allowed' : 'Restricted'}</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <div class="space-y">
+                    <a href="index.html" class="btn btn-outline" style="text-decoration:none"><i class="fas fa-gamepad"></i>Open Player Arena App</a>
+                    ${currentMod?.role === 'admin' ? '<a href="admin.html" class="btn btn-secondary" style="text-decoration:none"><i class="fas fa-shield-alt"></i>Open Full Admin Panel</a>' : ''}
+                    <button onclick="auth.signOut()" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i>Logout Moderator</button>
+                </div>
+                <div class="watermark">Velrix Moderator v4.0 — <span>AeroX Studio</span></div>
+            </div>`;
+        }
+    </script>
+</body>
+
+</html>
