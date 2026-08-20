@@ -7,8 +7,17 @@ const {
   AuthError
 } = require('./utils');
 
-const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || '421b1a39-54f8-45bd-84b8-aee27bba64c5';
-const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || 'os_v2_app_iinruoku7bc33bfyv3rhxoteyvkootsciqwuqv5t5xov2w7tgn2mqtvylcsehyqpt47urzyi5i2uc4abejmf6xxh5jh34bmlql5a45y';
+const DEFAULT_ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || '421b1a39-54f8-45bd-84b8-aee27bba64c5';
+const DEFAULT_ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || '';
+
+function formatOneSignalAuthHeader(apiKey) {
+  if (!apiKey) return '';
+  const trimmed = apiKey.trim();
+  if (trimmed.startsWith('Key ') || trimmed.startsWith('Bearer ') || trimmed.startsWith('Basic ')) {
+    return trimmed;
+  }
+  return `Key ${trimmed}`;
+}
 
 module.exports = async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -20,13 +29,21 @@ module.exports = async function handler(req, res) {
   try {
     // 1. Authenticate Firebase ID Token
     const user = await authenticate(req);
+    const userToken = user.token;
 
-    // 2. Fetch user profile and verify Admin or Moderator role
-    const accessToken = await getAccessToken();
-    const userData = await rtdbGet(`users/${user.uid}`, accessToken);
+    // 2. Resolve database token (Service Account OAuth Token with ID Token fallback)
+    let tokenToUse = userToken;
+    try {
+      tokenToUse = await getAccessToken();
+    } catch (saErr) {
+      console.warn('[send-notification] Service Account token not configured, using authenticated user token:', saErr.message);
+    }
+
+    // 3. Fetch user profile and verify Admin or Moderator role
+    const userData = await rtdbGet(`users/${user.uid}`, tokenToUse);
 
     if (!userData) {
-      return res.status(404).json({ error: 'User account not found.' });
+      return res.status(404).json({ error: 'User account not found in database.' });
     }
 
     const role = userData.role || 'user';
@@ -41,7 +58,31 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // 3. Parse & Validate notification payload
+    // 4. Resolve active OneSignal Credentials (RTDB app_settings/onesignal with ENV fallback)
+    let appId = DEFAULT_ONESIGNAL_APP_ID;
+    let apiKey = DEFAULT_ONESIGNAL_REST_API_KEY;
+
+    try {
+      const osSettings = await rtdbGet('app_settings/onesignal', tokenToUse);
+      if (osSettings && typeof osSettings === 'object') {
+        if (osSettings.app_id && typeof osSettings.app_id === 'string' && osSettings.app_id.trim()) {
+          appId = osSettings.app_id.trim();
+        }
+        if (osSettings.rest_api_key && typeof osSettings.rest_api_key === 'string' && osSettings.rest_api_key.trim()) {
+          apiKey = osSettings.rest_api_key.trim();
+        }
+      }
+    } catch (dbErr) {
+      console.warn('[send-notification] Failed to read RTDB onesignal config, using env:', dbErr.message);
+    }
+
+    if (!apiKey || apiKey.includes('YOUR_') || apiKey.trim() === '') {
+      return res.status(400).json({
+        error: 'OneSignal REST API Key is not configured. Please enter your valid OneSignal REST API Key in Admin Panel → Settings & Config → OneSignal Push Engine.'
+      });
+    }
+
+    // 5. Parse & Validate notification payload
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const title = (body.title || '').trim();
     const message = (body.message || body.body || '').trim();
@@ -62,16 +103,16 @@ module.exports = async function handler(req, res) {
       if (!tournamentId) {
         return res.status(400).json({ error: 'Tournament ID is required when targeting tournament players.' });
       }
-      const participants = await rtdbGet(`participants/${tournamentId}`, accessToken) || {};
+      const participants = await rtdbGet(`participants/${tournamentId}`, tokenToUse) || {};
       targetUids = Object.keys(participants);
       if (targetUids.length === 0) {
         return res.status(400).json({ error: 'No registered players found in this tournament.' });
       }
     }
 
-    // 4. Construct OneSignal payload
+    // 6. Construct OneSignal payload
     const osPayload = {
-      app_id: ONESIGNAL_APP_ID,
+      app_id: appId,
       headings: { en: title.slice(0, 120) },
       contents: { en: message.slice(0, 500) }
     };
@@ -100,12 +141,13 @@ module.exports = async function handler(req, res) {
       osPayload.included_segments = ['Total Subscriptions', 'Subscribed Users'];
     }
 
-    // 5. Dispatch via OneSignal REST API securely from server
-    const osResponse = await fetch('https://onesignal.com/api/v1/notifications', {
+    // 7. Dispatch via OneSignal REST API securely using standard Authorization: Key <key>
+    const authHeader = formatOneSignalAuthHeader(apiKey);
+    const osResponse = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`
+        'Authorization': authHeader
       },
       body: JSON.stringify(osPayload)
     });
@@ -114,10 +156,10 @@ module.exports = async function handler(req, res) {
 
     if (!osResponse.ok && (!osData || !osData.id)) {
       const errMsg = (osData && osData.errors) ? (Array.isArray(osData.errors) ? osData.errors.join(', ') : JSON.stringify(osData.errors)) : 'OneSignal dispatch failed';
-      return res.status(502).json({ error: errMsg });
+      return res.status(osResponse.status === 401 ? 401 : 502).json({ error: errMsg });
     }
 
-    // 6. Record to push_notifications_history
+    // 8. Record to push_notifications_history
     const historyData = {
       onesignal_id: osData.id || null,
       title,
@@ -134,7 +176,12 @@ module.exports = async function handler(req, res) {
       created_at: new Date().toISOString()
     };
 
-    const pushKey = await rtdbPush('push_notifications_history', historyData, accessToken);
+    let pushKey = null;
+    try {
+      pushKey = await rtdbPush('push_notifications_history', historyData, tokenToUse);
+    } catch(histErr) {
+      console.warn('[send-notification] Failed to write push history log:', histErr.message);
+    }
 
     return res.status(200).json({
       success: true,
