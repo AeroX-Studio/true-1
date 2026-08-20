@@ -12,6 +12,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-functions.js"></script>
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Sora', 'Inter', sans-serif; -webkit-tap-highlight-color: transparent }
         :root {
@@ -140,6 +143,16 @@
         /* Custom Mode Cards */
         .mode-card { padding: 14px; border-radius: var(--radius); background: var(--bg3); border: 1.5px solid var(--border3); cursor: pointer; transition: all .25s }
         .mode-card.selected { border-color: var(--violet); background: var(--gradient-subtle); box-shadow: 0 0 16px var(--violet-glow2) }
+
+        /* Modal Overlays & Drawers */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(7, 8, 13, 0.88); backdrop-filter: blur(16px); z-index: 500; display: none; align-items: flex-end; justify-content: center }
+        .modal-content { background: var(--bg2); border-top: 1px solid var(--border); border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: 24px 20px 40px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; animation: slideUp .3s ease; box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6) }
+        @media(min-width: 600px) {
+            .modal-overlay { align-items: center; padding: 20px }
+            .modal-content { border-radius: var(--radius-xl); border: 1px solid var(--border) }
+        }
+        .modal-handle { width: 40px; height: 4px; border-radius: 10px; background: var(--text4); margin: 0 auto 16px }
+        .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 10px }
     </style>
 </head>
 
@@ -176,11 +189,262 @@
         </nav>
     </div>
 
+    <!-- Edit Tournament Modal -->
+    <div id="adminEditTournamentModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-edit" style="color:var(--yellow)"></i>Edit Tournament</div>
+            <form id="adminEditTournamentForm" class="space-y">
+                <input type="hidden" id="edit-t-id">
+                <div><label class="label">Tournament Title *</label><input type="text" id="edit-t-title" class="input" required></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div><label class="label">Game Name</label><input type="text" id="edit-t-game" class="input" required></div>
+                    <div><label class="label">Match Mode</label><input type="text" id="edit-t-mode" placeholder="e.g. Battle Royale / Squad" class="input" required></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div><label class="label">Map</label><input type="text" id="edit-t-map" placeholder="Bermuda / Erangel" class="input"></div>
+                    <div><label class="label">Max Slots</label><input type="number" id="edit-t-slots" placeholder="48" class="input" min="2"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div><label class="label">Entry Fee (৳) *</label><input type="number" id="edit-t-fee" class="input" min="0" required></div>
+                    <div><label class="label">Prize Pool (৳) *</label><input type="number" id="edit-t-prize" class="input" min="0" required></div>
+                </div>
+                <div><label class="label">Match Date & Time *</label><input type="datetime-local" id="edit-t-time" class="input" required></div>
+                <div><label class="label">Thumbnail / Banner URL</label><input type="url" id="edit-t-thumb" placeholder="https://..." class="input"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div><label class="label">Room ID</label><input type="text" id="edit-t-roomid" placeholder="Optional" class="input"></div>
+                    <div><label class="label">Room Password</label><input type="text" id="edit-t-roompass" placeholder="Optional" class="input"></div>
+                </div>
+                <div>
+                    <label class="label">Status</label>
+                    <select id="edit-t-status" class="input">
+                        <option value="Upcoming">Upcoming</option>
+                        <option value="Live">Live</option>
+                        <option value="Completed">Completed</option>
+                        <option value="DRAFT">DRAFT</option>
+                    </select>
+                </div>
+                <div><label class="label">Rules & Notes</label><textarea id="edit-t-rules" class="textarea" rows="3" placeholder="Tournament match rules..."></textarea></div>
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i>Save Changes</button>
+                    <button type="button" onclick="closeEditTournamentModal()" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Moderator Permissions Modal -->
+    <div id="modPermissionsModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-user-shield" style="color:var(--cyan)"></i>Moderator Permissions</div>
+            <div class="space-y">
+                <input type="hidden" id="perm-target-uid">
+                <div class="card" style="padding:14px;background:var(--bg4);border:1px solid var(--border3)">
+                    <p style="font-weight:800;font-size:14px" id="perm-mod-name">Moderator Name</p>
+                    <p style="font-size:11px;color:var(--text4)" id="perm-mod-email">mod@velrix.com</p>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Individual Access Controls</span>
+                    <div style="display:flex;gap:6px">
+                        <button type="button" onclick="toggleAllModPerms(true)" class="btn btn-ghost btn-sm" style="color:var(--cyan);font-size:11px;padding:4px 8px"><i class="fas fa-check-double"></i> All</button>
+                        <button type="button" onclick="toggleAllModPerms(false)" class="btn btn-ghost btn-sm" style="color:var(--red);font-size:11px;padding:4px 8px"><i class="fas fa-ban"></i> None</button>
+                    </div>
+                </div>
+                <div class="space-y" id="perm-checkboxes-list">
+                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-eye" style="color:var(--cyan);margin-right:8px"></i>View Tournaments</p><p style="font-size:10px;color:var(--text4)">Browse tournaments & match schedules</p></div>
+                        <input type="checkbox" id="perm_view_tournaments" style="width:18px;height:18px;accent-color:var(--cyan)">
+                    </label>
+                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-edit" style="color:var(--yellow);margin-right:8px"></i>Edit Tournaments</p><p style="font-size:10px;color:var(--text4)">Create, update, pause, and cancel matches</p></div>
+                        <input type="checkbox" id="perm_edit_tournaments" style="width:18px;height:18px;accent-color:var(--yellow)">
+                    </label>
+                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-user-check" style="color:var(--green);margin-right:8px"></i>Manage Players</p><p style="font-size:10px;color:var(--text4)">Verify players, remove invalid participants</p></div>
+                        <input type="checkbox" id="perm_manage_players" style="width:18px;height:18px;accent-color:var(--green)">
+                    </label>
+                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-users" style="color:var(--violet);margin-right:8px"></i>Manage Teams</p><p style="font-size:10px;color:var(--text4)">Review team rosters & squad compositions</p></div>
+                        <input type="checkbox" id="perm_manage_teams" style="width:18px;height:18px;accent-color:var(--violet)">
+                    </label>
+                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-trophy" style="color:var(--yellow);margin-right:8px"></i>Verify Results</p><p style="font-size:10px;color:var(--text4)">Check proof screenshots & declare winners</p></div>
+                        <input type="checkbox" id="perm_verify_results" style="width:18px;height:18px;accent-color:var(--yellow)">
+                    </label>
+                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-flag" style="color:var(--red);margin-right:8px"></i>Manage Reports</p><p style="font-size:10px;color:var(--text4)">Investigate disputes, rule violations & tickets</p></div>
+                        <input type="checkbox" id="perm_manage_reports" style="width:18px;height:18px;accent-color:var(--red)">
+                    </label>
+                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-user-slash" style="color:var(--red);margin-right:8px"></i>Ban Players</p><p style="font-size:10px;color:var(--text4)">Issue warnings & temporary/permanent bans</p></div>
+                        <input type="checkbox" id="perm_ban_players" style="width:18px;height:18px;accent-color:var(--red)">
+                    </label>
+                    <label class="setting-item" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border3)">
+                        <div><p style="font-weight:700;font-size:13px"><i class="fas fa-bell" style="color:var(--cyan);margin-right:8px"></i>Send Notifications</p><p style="font-size:10px;color:var(--text4)">Broadcast OneSignal push alerts & reminders</p></div>
+                        <input type="checkbox" id="perm_send_notifications" style="width:18px;height:18px;accent-color:var(--cyan)">
+                    </label>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    <button type="button" onclick="saveModPermissions()" class="btn btn-primary"><i class="fas fa-save"></i>Save Permissions</button>
+                    <button type="button" onclick="closeModPermissionsModal()" class="btn btn-outline">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Send Push Notification Modal -->
+    <div id="adminPushModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-paper-plane" style="color:var(--cyan)"></i>Send OneSignal Push Notification</div>
+            <form id="adminPushForm" class="space-y">
+                <div>
+                    <label class="label">Target Audience *</label>
+                    <select id="apush-target" class="input" required onchange="onPushTargetChange(this.value)">
+                        <option value="all">📢 All App Users (OneSignal Global Broadcast)</option>
+                        <option value="tournament">🏆 Joined Players of Specific Tournament</option>
+                    </select>
+                </div>
+                <div id="apush-tournament-select-box" style="display:none">
+                    <label class="label">Select Target Tournament</label>
+                    <select id="apush-tid" class="input"></select>
+                </div>
+                <div>
+                    <label class="label">Notification Title *</label>
+                    <input type="text" id="apush-title" placeholder="e.g. 🔴 Free Fire Match Room is Live!" class="input" required>
+                </div>
+                <div>
+                    <label class="label">Message Body *</label>
+                    <textarea id="apush-message" class="textarea" rows="3" placeholder="Room ID & Password have been published. Join your lobby now!" required></textarea>
+                </div>
+                <div>
+                    <label class="label">Image / Banner URL <span style="font-size:10px;color:var(--text4)">(Optional)</span></label>
+                    <input type="url" id="apush-image" placeholder="https://images.unsplash.com/..." class="input">
+                </div>
+                <div>
+                    <label class="label">Action / Launch URL <span style="font-size:10px;color:var(--text4)">(Optional)</span></label>
+                    <input type="text" id="apush-url" placeholder="index.html or custom action link" class="input">
+                </div>
+                <div class="info-box" style="font-size:11px">
+                    <i class="fas fa-mobile-alt" style="color:var(--cyan);margin-right:6px"></i>Dispatches via OneSignal REST API & Median Web-to-APK OneSignal Bridge.
+                </div>
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-bolt"></i>Dispatch Push Broadcast</button>
+                    <button type="button" onclick="closeAdminPushModal()" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- OneSignal Verification Dialog Modal -->
+    <div id="oneSignalVerificationModal" class="modal-overlay" style="z-index:9999">
+        <div class="modal-content" style="text-align:center;max-width:480px">
+            <div class="modal-handle"></div>
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(6,182,212,0.15);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 0 25px var(--cyan-glow)"><i class="fas fa-bell"></i></div>
+            <h3 style="font-size:18px;font-weight:900;margin-bottom:10px">Your OneSignal SDK integration is complete!</h3>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6">You can now send Push Notifications & In-App Messages through OneSignal. Tap below to enable push notifications.</p>
+            <button type="button" onclick="handleOneSignalGotIt()" class="btn btn-primary btn-lg" style="width:100%"><i class="fas fa-check"></i>Got it</button>
+        </div>
+    </div>
+
     <div id="toast"></div>
     <div id="veltrix-watermark"><span class="wm-dot"></span><span class="wm-label">Made by AeroX Studio</span></div>
 
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // ── OneSignal SDK & Median Push Integration ──
+        const ONESIGNAL_APP_ID = "421b1a39-54f8-45bd-84b8-aee27bba64c5";
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        let oneSignalSubscriptionObserver = null;
+        let oneSignalVerificationDialogShown = false;
+
+        function initOneSignalSDK() {
+            // 1. Median.co Native Web-to-APK OneSignal Bridge Check
+            if (window.median && window.median.onesignal) {
+                console.log('[OneSignal] Initializing via Median.co Native OneSignal Bridge');
+                if (typeof window.median.onesignal.info === 'function') {
+                    window.median.onesignal.info(data => {
+                        if (data && (data.userId || data.subscriptionId) && !oneSignalVerificationDialogShown) {
+                            checkAndShowOneSignalVerificationDialog(data.userId || data.subscriptionId, true);
+                        }
+                    });
+                }
+            }
+
+            // 2. OneSignal Official Web SDK
+            OneSignalDeferred.push(async function(OneSignal) {
+                try {
+                    await OneSignal.init({
+                        appId: ONESIGNAL_APP_ID,
+                        allowLocalhostAsSecureOrigin: true,
+                        notifyButton: { enable: false }
+                    });
+                    console.log('[OneSignal] Web SDK Initialized with App ID:', ONESIGNAL_APP_ID);
+
+                    // Retained observer reference
+                    oneSignalSubscriptionObserver = function(event) {
+                        const subId = OneSignal.User?.PushSubscription?.id;
+                        if (subId && typeof subId === 'string' && subId.trim() !== '' && !subId.startsWith('local-')) {
+                            checkAndShowOneSignalVerificationDialog(subId, false);
+                        }
+                    };
+
+                    if (OneSignal.User && OneSignal.User.PushSubscription) {
+                        OneSignal.User.PushSubscription.addEventListener("change", oneSignalSubscriptionObserver);
+                        
+                        // Evaluate immediately at observer-registration time
+                        const currentSubId = OneSignal.User.PushSubscription.id;
+                        if (currentSubId && typeof currentSubId === 'string' && currentSubId.trim() !== '' && !currentSubId.startsWith('local-')) {
+                            checkAndShowOneSignalVerificationDialog(currentSubId, false);
+                        }
+                    }
+                } catch(err) {
+                    console.warn('[OneSignal] Initialization note:', err);
+                }
+            });
+        }
+
+        function checkAndShowOneSignalVerificationDialog(subId, isMedian) {
+            if (oneSignalVerificationDialogShown) return;
+            const key = 'onesignal_verified_' + subId;
+            if (localStorage.getItem(key)) {
+                oneSignalVerificationDialogShown = true;
+                return;
+            }
+            oneSignalVerificationDialogShown = true;
+            localStorage.setItem(key, 'true');
+            showOneSignalVerificationModal();
+        }
+
+        function showOneSignalVerificationModal() {
+            const modal = document.getElementById('oneSignalVerificationModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function handleOneSignalGotIt() {
+            const modal = document.getElementById('oneSignalVerificationModal');
+            if (modal) modal.style.display = 'none';
+            requestOneSignalPushPermission();
+        }
+
+        function requestOneSignalPushPermission() {
+            // Median.co native bridge registration
+            if (window.median && window.median.onesignal && typeof window.median.onesignal.register === 'function') {
+                window.median.onesignal.register();
+                showToast('Push Notifications Enabled! 🔔');
+                return;
+            }
+            // Web SDK
+            if (window.OneSignal) {
+                OneSignal.Notifications.requestPermission().then(granted => {
+                    if (granted) showToast('Push Notifications Enabled! 🔔');
+                }).catch(() => {});
+            }
+        }
+
+        initOneSignalSDK();
 
         const firebaseConfig = {
             apiKey: "AIzaSyDgxg06yT5BvGEgpC8bcyXwU9h0UEuaZss",
@@ -546,8 +810,8 @@
                         <div><p style="font-size:9px;font-weight:700;color:var(--text4);text-transform:uppercase">Prize Pool</p><p style="font-size:13px;font-weight:800;color:var(--green)">${fmt(prize)}</p></div>
                     </div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap">
-                        ${isDraft ? `<button onclick="editDraft('${id}')" class="btn btn-warning btn-sm" style="flex:2"><i class="fas fa-edit"></i>Continue Draft</button>` : `<button onclick="navigateTo('adminManageTournamentPage',{tournamentId:'${id}'})" class="btn btn-secondary btn-sm" style="flex:2"><i class="fas fa-cog"></i>Manage Match</button>`}
-                        <button onclick="duplicateTournament('${id}')" class="btn btn-outline btn-sm" style="flex:1" title="Duplicate"><i class="fas fa-copy"></i>Clone</button>
+                        ${isDraft ? `<button onclick="editDraft('${id}')" class="btn btn-warning btn-sm" style="flex:2"><i class="fas fa-edit"></i>Continue Draft</button>` : `<button onclick="openEditTournamentModal('${id}')" class="btn btn-warning btn-sm" style="flex:1"><i class="fas fa-edit"></i>Edit</button><button onclick="navigateTo('adminManageTournamentPage',{tournamentId:'${id}'})" class="btn btn-secondary btn-sm" style="flex:1"><i class="fas fa-cog"></i>Manage</button>`}
+                        <button onclick="duplicateTournament('${id}')" class="btn btn-outline btn-sm" style="width:auto;padding:8px 12px" title="Duplicate"><i class="fas fa-copy"></i></button>
                         <button onclick="deleteTournament('${id}')" class="btn btn-danger btn-sm" style="width:auto;padding:8px 12px" title="Delete"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>`;
@@ -1419,31 +1683,97 @@
         async function renderUsers(c) {
             c.innerHTML = `<div style="padding:20px" class="fade-in">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-                <div class="section-title" style="margin-bottom:0"><i class="fas fa-users" style="color:var(--violet)"></i>Users Management</div>
+                <div class="section-title" style="margin-bottom:0"><i class="fas fa-users" style="color:var(--violet)"></i>Users & Staff Management</div>
             </div>
             <div id="users-list-view" class="space-y"><div style="text-align:center;padding:40px"><div class="neon-spinner"></div></div></div>
             </div>`;
             const el = document.getElementById('users-list-view');
             const snap = await db.ref('users').once('value');
             const us = snap.val() || {};
-            el.innerHTML = Object.entries(us).map(([uid, u]) => `
-            <div class="card fade-up" style="padding:14px;margin-bottom:10px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                    <div><p style="font-weight:700;font-size:13px">${u.username || 'User'} ${u.role==='admin'?'<span class="badge badge-admin" style="font-size:8px;margin-left:4px">Admin</span>':''}</p><p style="font-size:10px;color:var(--text4)">${u.email}</p></div>
-                    <p style="font-size:15px;font-weight:900;color:var(--green)">${fmt(u.wallet_balance||0)}</p>
-                </div>
-                <div style="display:flex;gap:6px">
-                    <button onclick="addMoneyToUser('${uid}','${u.username||'User'}')" class="btn btn-secondary btn-sm" style="flex:1"><i class="fas fa-plus"></i>Add ৳</button>
-                    <button onclick="deductMoneyFromUser('${uid}','${u.username||'User'}')" class="btn btn-outline btn-sm" style="flex:1"><i class="fas fa-minus"></i>Deduct ৳</button>
-                </div>
-            </div>`).join('');
+            el.innerHTML = Object.entries(us).map(([uid, u]) => {
+                const isMod = u.role === 'moderator';
+                const roleBadge = u.role === 'admin' 
+                    ? '<span class="badge badge-admin" style="font-size:8px;margin-left:4px">👑 Admin</span>' 
+                    : isMod 
+                    ? '<span class="badge" style="font-size:8px;margin-left:4px;background:var(--cyan-glow);color:var(--cyan);border:1px solid rgba(6,182,212,0.4)">🛡️ Moderator</span>' 
+                    : '<span class="badge" style="font-size:8px;margin-left:4px;background:rgba(255,255,255,0.06);color:var(--text3)">Player</span>';
+                
+                return `
+                <div class="card fade-up" style="padding:16px;margin-bottom:10px">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                        <div>
+                            <p style="font-weight:700;font-size:14px">${u.username || 'User'} ${roleBadge}</p>
+                            <p style="font-size:11px;color:var(--text4);margin-top:2px">${u.email || 'No email'}</p>
+                            <p style="font-size:10px;color:var(--text3);margin-top:2px">UID: <code style="font-family:monospace">${uid.slice(0,10)}...</code></p>
+                        </div>
+                        <div style="text-align:right">
+                            <p style="font-size:15px;font-weight:900;color:var(--green)">${fmt(u.wallet_balance||0)}</p>
+                            <span class="badge" style="background:rgba(139,92,246,0.12);color:var(--violet);font-size:9px;margin-top:4px">🎟️ ${u.free_passes || 0} Passes</span>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:${isMod ? '1fr 1fr 1fr 1fr 1fr' : '1fr 1fr 1fr 1fr'};gap:6px;margin-top:10px">
+                        <button onclick="changeUserRole('${uid}','${u.username||'User'}','${u.role||'user'}')" class="btn btn-warning btn-sm" title="Change Role"><i class="fas fa-user-shield"></i>Role</button>
+                        ${isMod ? `<button onclick="openModPermissionsModal('${uid}','${u.username||'Moderator'}','${u.email||''}')" class="btn btn-primary btn-sm" style="background:var(--cyan);color:#07080D;font-weight:800" title="Configure Moderator Access"><i class="fas fa-key"></i>Perms</button>` : ''}
+                        <button onclick="addMoneyToUser('${uid}','${u.username||'User'}')" class="btn btn-secondary btn-sm" title="Add Funds"><i class="fas fa-plus"></i>+৳</button>
+                        <button onclick="deductMoneyFromUser('${uid}','${u.username||'User'}')" class="btn btn-outline btn-sm" title="Deduct Funds"><i class="fas fa-minus"></i>-৳</button>
+                        <button onclick="manageUserPasses('${uid}','${u.username||'User'}',${u.free_passes||0})" class="btn btn-primary btn-sm" title="Tournament Passes"><i class="fas fa-ticket-alt"></i>Passes</button>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
+        let tempReferralTiers = [];
+
         async function renderSettings(c) {
-            const bd = (await db.ref('app_settings/banner').once('value')).val() || { title: "Welcome to Velrix Tournaments", subtitle: "Compete. Win. Dominate.", enabled: true };
+            const [bdSnap, refSnap, osSnap, pushSnap] = await Promise.all([
+                db.ref('app_settings/banner').once('value'),
+                db.ref('app_settings/referral_plans').once('value'),
+                db.ref('app_settings/onesignal').once('value'),
+                db.ref('push_notifications_history').limitToLast(10).once('value')
+            ]);
+            const bd = bdSnap.val() || { title: "Welcome to Velrix Tournaments", subtitle: "Compete. Win. Dominate.", enabled: true };
+            const refConfig = refSnap.val() || {
+                enabled: true,
+                default_invite_milestone: 5,
+                default_reward_type: 'free_pass',
+                default_reward_label: '1 Free Tournament Entry Pass',
+                tiers: [
+                    { id: 'tier_1', invites: 3, reward_type: 'coins', reward_value: 30, reward_label: '৳30 Bonus Cash', icon: '🎁' },
+                    { id: 'tier_2', invites: 5, reward_type: 'free_pass', reward_value: 1, reward_label: '1 Free Tournament Entry Pass', icon: '🎟️' },
+                    { id: 'tier_3', invites: 10, reward_type: 'coins', reward_value: 100, reward_label: '৳100 Bonus Cash + VIP', icon: '👑' },
+                    { id: 'tier_4', invites: 25, reward_type: 'free_pass', reward_value: 3, reward_label: '3 Free Tournament Passes', icon: '⚡' }
+                ]
+            };
+            tempReferralTiers = refConfig.tiers ? JSON.parse(JSON.stringify(refConfig.tiers)) : [];
+            const osConfig = osSnap.val() || { app_id: ONESIGNAL_APP_ID };
+            const pushHistory = pushSnap.val() || {};
+            const pushList = Object.entries(pushHistory).reverse();
+
             c.innerHTML = `<div style="padding:20px" class="fade-in">
             <div class="section-title"><i class="fas fa-cog" style="color:var(--text3)"></i>Settings & Config</div>
-            <div class="card fade-up stagger-1" style="margin-bottom:12px">
+            
+            <!-- OneSignal Push Notifications & Cloud Engine -->
+            <div class="card fade-up stagger-1" style="margin-bottom:16px;border-color:rgba(6,182,212,0.3)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <h3 style="font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px"><i class="fas fa-paper-plane" style="color:var(--cyan)"></i>OneSignal Push Engine</h3>
+                    <button type="button" onclick="openAdminPushModal()" class="btn btn-primary btn-sm" style="width:auto;padding:6px 12px"><i class="fas fa-bolt"></i>Dispatch Broadcast</button>
+                </div>
+                <div class="space-y">
+                    <div style="padding:10px;background:var(--bg4);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <p style="font-size:10px;color:var(--text4);text-transform:uppercase;font-weight:700">App ID</p>
+                            <p style="font-size:12px;font-weight:700;color:var(--cyan)">421b1a39-54f8-45bd-84b8-aee27bba64c5</p>
+                        </div>
+                        <span class="badge badge-approved"><i class="fas fa-shield-alt" style="margin-right:4px"></i>Backend Secured</span>
+                    </div>
+                    <div style="padding:10px;background:rgba(6,182,212,0.08);border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:11px;color:var(--text2);line-height:1.5">
+                        <i class="fas fa-lock" style="color:var(--cyan);margin-right:6px"></i><strong>Zero-Key Frontend Security:</strong> Push notifications are securely dispatched via <strong>Firebase Cloud Functions</strong>. The OneSignal REST API key is stored strictly on the server backend.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Banner Settings -->
+            <div class="card fade-up stagger-2" style="margin-bottom:16px">
                 <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-image" style="color:var(--cyan)"></i>Home Banner Settings</h3>
                 <form id="bannerSettingsForm" class="space-y">
                     <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg4);border-radius:var(--radius-sm)"><input type="checkbox" id="banner-enabled" ${bd.enabled?'checked':''} style="accent-color:var(--violet)"><label for="banner-enabled" style="font-size:12px;font-weight:600">Enable Banner</label></div>
@@ -1452,9 +1782,59 @@
                     <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i>Save Banner</button>
                 </form>
             </div>
-            <a href="index.html" class="btn btn-outline fade-up stagger-2" style="text-decoration:none;margin-bottom:10px"><i class="fas fa-external-link-alt"></i>Open Player App</a>
+
+            <!-- Referral Plans & Rewards Editor -->
+            <div class="card fade-up stagger-3" style="margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <h3 style="font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px"><i class="fas fa-gift" style="color:var(--yellow)"></i>Referral & Rewards Plans</h3>
+                    <span class="badge ${refConfig.enabled ? 'badge-approved' : 'badge-draft'}">${refConfig.enabled ? 'Active' : 'Disabled'}</span>
+                </div>
+                <form id="referralConfigForm" class="space-y">
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg4);border-radius:var(--radius-sm)"><input type="checkbox" id="ref-enabled" ${refConfig.enabled?'checked':''} style="accent-color:var(--violet)"><label for="ref-enabled" style="font-size:12px;font-weight:600">Enable Referral System</label></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                        <div><label class="label">Default Invites</label><input type="number" id="ref-def-invites" value="${refConfig.default_invite_milestone||5}" class="input" min="1" required></div>
+                        <div><label class="label">Default Reward</label><input type="text" id="ref-def-label" value="${refConfig.default_reward_label||'1 Free Tournament Entry Pass'}" class="input" required></div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <label class="label" style="margin-bottom:0">Multi-Tier Reward Plans</label>
+                        <button type="button" onclick="addReferralTier()" class="btn btn-secondary btn-sm" style="width:auto;padding:4px 10px;font-size:10px"><i class="fas fa-plus"></i>Add Tier</button>
+                    </div>
+
+                    <div id="referral-tiers-container" class="space-y" style="margin-top:10px">
+                        <!-- Rendered by renderReferralTiersList -->
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm" style="margin-top:14px"><i class="fas fa-save"></i>Save Referral Plans</button>
+                </form>
+            </div>
+
+            <!-- Sent Push History -->
+            <div class="card fade-up stagger-4" style="margin-bottom:16px">
+                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-history" style="color:var(--violet)"></i>Recent Push Broadcasts</h3>
+                <div class="space-y" style="max-height:240px;overflow-y:auto">
+                    ${!pushList.length ? '<p style="font-size:11px;color:var(--text4);text-align:center;padding:12px">No push broadcasts recorded</p>' : pushList.map(([, p]) => `
+                        <div style="padding:10px;background:var(--bg4);border:1px solid var(--border3);border-radius:var(--radius-sm)">
+                            <div style="display:flex;justify-content:space-between;align-items:start">
+                                <p style="font-weight:700;font-size:12px;color:var(--cyan)">${p.title || 'Broadcast'}</p>
+                                <span class="badge badge-admin" style="font-size:8px">${p.target || 'All'}</span>
+                            </div>
+                            <p style="font-size:11px;color:var(--text3);margin-top:2px">${p.message || ''}</p>
+                            <p style="font-size:9px;color:var(--text4);margin-top:4px"><i class="fas fa-clock" style="margin-right:3px"></i>${new Date(p.created_at).toLocaleString()} • Sent by: ${p.sender_name || 'Staff'}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <!-- Quick Navigation Links -->
+            <a href="mod.html" class="btn btn-secondary fade-up stagger-5" style="text-decoration:none;margin-bottom:10px"><i class="fas fa-shield-halved"></i>Open Moderator Panel</a>
+            <a href="index.html" class="btn btn-outline fade-up stagger-5" style="text-decoration:none;margin-bottom:10px"><i class="fas fa-external-link-alt"></i>Open Player App</a>
             <div class="watermark">Velrix Esports Admin v4.0 — <span>AeroX Studio</span></div>
             </div>`;
+
+            renderReferralTiersList();
+
             document.getElementById('bannerSettingsForm')?.addEventListener('submit', async e => {
                 e.preventDefault();
                 await db.ref('app_settings/banner').set({
@@ -1464,6 +1844,341 @@
                 });
                 showToast('Banner Settings Saved! ✨');
             });
+
+            document.getElementById('referralConfigForm')?.addEventListener('submit', async e => {
+                e.preventDefault();
+                const enabled = document.getElementById('ref-enabled').checked;
+                const defInvites = Number(document.getElementById('ref-def-invites').value) || 5;
+                const defLabel = document.getElementById('ref-def-label').value.trim();
+                
+                await db.ref('app_settings/referral_plans').set({
+                    enabled,
+                    default_invite_milestone: defInvites,
+                    default_reward_type: 'free_pass',
+                    default_reward_label: defLabel,
+                    tiers: tempReferralTiers
+                });
+                showToast('Referral Plans Saved Successfully! 🎁');
+            });
+        }
+
+        function renderReferralTiersList() {
+            const container = document.getElementById('referral-tiers-container');
+            if (!container) return;
+            if (!tempReferralTiers || !tempReferralTiers.length) {
+                container.innerHTML = '<p style="font-size:11px;color:var(--text4);text-align:center;padding:10px">No custom tiers configured</p>';
+                return;
+            }
+            container.innerHTML = tempReferralTiers.map((t, idx) => `
+            <div class="card" style="padding:12px;border:1px solid var(--border3);background:var(--bg4)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <span style="font-size:11px;font-weight:700;color:var(--cyan)">Tier #${idx+1} (${t.invites} Invites)</span>
+                    <button type="button" onclick="removeReferralTier(${idx})" class="btn btn-ghost btn-sm" style="color:var(--red);padding:2px 6px"><i class="fas fa-trash"></i></button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">
+                    <div>
+                        <label class="label" style="font-size:9px">Required Invites</label>
+                        <input type="number" class="input" style="padding:8px;font-size:12px" value="${t.invites}" min="1" onchange="tempReferralTiers[${idx}].invites = Number(this.value)">
+                    </div>
+                    <div>
+                        <label class="label" style="font-size:9px">Reward Type</label>
+                        <select class="input" style="padding:8px;font-size:12px" onchange="tempReferralTiers[${idx}].reward_type = this.value">
+                            <option value="free_pass" ${t.reward_type==='free_pass'?'selected':''}>🎟️ Free Tournament Pass</option>
+                            <option value="coins" ${t.reward_type==='coins'?'selected':''}>💰 Bonus Cash (৳)</option>
+                            <option value="coins_and_badge" ${t.reward_type==='coins_and_badge'?'selected':''}>👑 Cash + VIP Badge</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px">
+                    <div>
+                        <label class="label" style="font-size:9px">Value (৳ or Passes)</label>
+                        <input type="number" class="input" style="padding:8px;font-size:12px" value="${t.reward_value||1}" min="1" onchange="tempReferralTiers[${idx}].reward_value = Number(this.value)">
+                    </div>
+                    <div>
+                        <label class="label" style="font-size:9px">Reward Label</label>
+                        <input type="text" class="input" style="padding:8px;font-size:12px" value="${t.reward_label||''}" onchange="tempReferralTiers[${idx}].reward_label = this.value">
+                    </div>
+                </div>
+            </div>`).join('');
+        }
+
+        function addReferralTier() {
+            const nextInvites = (tempReferralTiers.length ? tempReferralTiers[tempReferralTiers.length - 1].invites + 5 : 5);
+            tempReferralTiers.push({
+                id: 'tier_' + Date.now(),
+                invites: nextInvites,
+                reward_type: 'free_pass',
+                reward_value: 1,
+                reward_label: `Tier Reward (${nextInvites} Invites)`,
+                icon: '🎟️'
+            });
+            renderReferralTiersList();
+        }
+
+        function removeReferralTier(idx) {
+            tempReferralTiers.splice(idx, 1);
+            renderReferralTiersList();
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // MODERATOR PERMISSIONS MODAL
+        // ══════════════════════════════════════════════════════════════
+        const MOD_PERMISSION_KEYS = [
+            'view_tournaments',
+            'edit_tournaments',
+            'manage_players',
+            'manage_teams',
+            'verify_results',
+            'manage_reports',
+            'ban_players',
+            'send_notifications'
+        ];
+
+        async function openModPermissionsModal(uid, name, email) {
+            document.getElementById('perm-target-uid').value = uid;
+            document.getElementById('perm-mod-name').textContent = name + ' (Moderator)';
+            document.getElementById('perm-mod-email').textContent = email || uid;
+
+            const snap = await db.ref(`users/${uid}/mod_permissions`).once('value');
+            const perms = snap.val() || {};
+
+            MOD_PERMISSION_KEYS.forEach(key => {
+                const cb = document.getElementById('perm_' + key);
+                if (cb) {
+                    cb.checked = perms[key] !== false; // default true if not specifically disabled
+                }
+            });
+
+            document.getElementById('modPermissionsModal').style.display = 'flex';
+        }
+
+        function closeModPermissionsModal() {
+            document.getElementById('modPermissionsModal').style.display = 'none';
+        }
+
+        function toggleAllModPerms(state) {
+            MOD_PERMISSION_KEYS.forEach(key => {
+                const cb = document.getElementById('perm_' + key);
+                if (cb) cb.checked = state;
+            });
+        }
+
+        async function saveModPermissions() {
+            const uid = document.getElementById('perm-target-uid').value;
+            if (!uid) return;
+            const perms = {};
+            MOD_PERMISSION_KEYS.forEach(key => {
+                const cb = document.getElementById('perm_' + key);
+                perms[key] = cb ? cb.checked : true;
+            });
+
+            try {
+                await db.ref(`users/${uid}/mod_permissions`).set(perms);
+                await logAudit('MOD_PERMISSIONS_UPDATED', null, { target_uid: uid, permissions: perms });
+                showToast('Moderator Permissions Updated! 🔐');
+                closeModPermissionsModal();
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // PUSH NOTIFICATION BROADCAST DISPATCHER
+        // ══════════════════════════════════════════════════════════════
+        async function openAdminPushModal() {
+            const snap = await db.ref('tournaments').once('value');
+            const ts = snap.val() || {};
+            const selectEl = document.getElementById('apush-tid');
+            if (selectEl) {
+                selectEl.innerHTML = Object.entries(ts).map(([id, t]) => `
+                    <option value="${id}">${t.title || 'Tournament'} (${t.game_name || 'Game'})</option>
+                `).join('');
+            }
+            document.getElementById('adminPushModal').style.display = 'flex';
+        }
+
+        function closeAdminPushModal() {
+            document.getElementById('adminPushModal').style.display = 'none';
+        }
+
+        function onPushTargetChange(val) {
+            const box = document.getElementById('apush-tournament-select-box');
+            if (box) box.style.display = val === 'tournament' ? 'block' : 'none';
+        }
+
+        async function dispatchPushBackend(payload) {
+            try {
+                const sendPushFn = firebase.app().functions('asia-southeast1').httpsCallable('sendOneSignalNotification');
+                const res = await sendPushFn(payload);
+                return res.data;
+            } catch (cfErr) {
+                console.warn('[Cloud Function fallback to /api/send-notification]:', cfErr.message);
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch('/api/send-notification', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'Notification dispatch failed');
+                return d;
+            }
+        }
+
+        document.getElementById('adminPushForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const target = document.getElementById('apush-target').value;
+            const tid = document.getElementById('apush-tid')?.value;
+            const title = document.getElementById('apush-title').value.trim();
+            const message = document.getElementById('apush-message').value.trim();
+            const image = document.getElementById('apush-image').value.trim();
+            const url = document.getElementById('apush-url').value.trim();
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dispatching via Secure Backend...';
+            btn.disabled = true;
+
+            try {
+                const res = await dispatchPushBackend({
+                    title,
+                    message,
+                    target,
+                    tournament_id: target === 'tournament' ? tid : null,
+                    image_url: image || null,
+                    url: url || null
+                });
+
+                await logAudit('PUSH_NOTIFICATION_SENT', null, { title, target, backend: 'secure_server_backend' });
+                showToast('🎉 ' + (res.message || 'Push Notification Dispatched Successfully!'));
+                closeAdminPushModal();
+                e.target.reset();
+                if (document.getElementById('adminSettingsPage')?.classList.contains('active')) {
+                    renderSettings(document.getElementById('adminSettingsPage'));
+                }
+            } catch (err) {
+                console.error('[Admin Push Error]:', err);
+                const safeMsg = err.message || 'Notification dispatch failed.';
+                showToast('Push Error: ' + safeMsg, true);
+            } finally {
+                btn.innerHTML = '<i class="fas fa-bolt"></i>Dispatch Push Broadcast';
+                btn.disabled = false;
+            }
+        });
+
+        // ══════════════════════════════════════════════════════════════
+        // EDIT TOURNAMENT MODAL HANDLERS
+        // ══════════════════════════════════════════════════════════════
+        async function openEditTournamentModal(id) {
+            const snap = await db.ref(`tournaments/${id}`).once('value');
+            if (!snap.exists()) return showToast('Tournament not found', true);
+            const t = snap.val();
+
+            document.getElementById('edit-t-id').value = id;
+            document.getElementById('edit-t-title').value = t.title || '';
+            document.getElementById('edit-t-game').value = t.game_name || t.game?.game_name || 'Free Fire';
+            document.getElementById('edit-t-mode').value = t.game_type || t.game?.mode_name || 'Battle Royale';
+            document.getElementById('edit-t-map').value = t.map || t.game?.map || 'Bermuda';
+            document.getElementById('edit-t-slots').value = t.max_participants || t.slots || 48;
+            document.getElementById('edit-t-fee').value = t.entry_fee || 0;
+            document.getElementById('edit-t-prize').value = t.prize_pool || t.prize?.total_pool || 0;
+            
+            // Format match time for datetime-local
+            if (t.match_time) {
+                try {
+                    const dt = new Date(t.match_time);
+                    const iso = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                    document.getElementById('edit-t-time').value = iso;
+                } catch(e) { document.getElementById('edit-t-time').value = ''; }
+            } else {
+                document.getElementById('edit-t-time').value = '';
+            }
+
+            document.getElementById('edit-t-thumb').value = t.thumbnail_url || '';
+            document.getElementById('edit-t-roomid').value = t.room_id || '';
+            document.getElementById('edit-t-roompass').value = t.room_password || '';
+            document.getElementById('edit-t-status').value = t.status || 'Upcoming';
+            document.getElementById('edit-t-rules').value = t.rules || t.game_rules || '';
+
+            document.getElementById('adminEditTournamentModal').style.display = 'flex';
+        }
+
+        function closeEditTournamentModal() {
+            document.getElementById('adminEditTournamentModal').style.display = 'none';
+        }
+
+        document.getElementById('adminEditTournamentForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('edit-t-id').value;
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+
+            try {
+                const updates = {
+                    title: document.getElementById('edit-t-title').value.trim(),
+                    game_name: document.getElementById('edit-t-game').value.trim(),
+                    game_type: document.getElementById('edit-t-mode').value.trim(),
+                    map: document.getElementById('edit-t-map').value.trim(),
+                    max_participants: Number(document.getElementById('edit-t-slots').value) || 48,
+                    entry_fee: Number(document.getElementById('edit-t-fee').value) || 0,
+                    prize_pool: Number(document.getElementById('edit-t-prize').value) || 0,
+                    match_time: new Date(document.getElementById('edit-t-time').value).toISOString(),
+                    thumbnail_url: document.getElementById('edit-t-thumb').value.trim(),
+                    room_id: document.getElementById('edit-t-roomid').value.trim(),
+                    room_password: document.getElementById('edit-t-roompass').value.trim(),
+                    status: document.getElementById('edit-t-status').value,
+                    rules: document.getElementById('edit-t-rules').value.trim(),
+                    updated_at: new Date().toISOString()
+                };
+
+                await db.ref(`tournaments/${id}`).update(updates);
+                await logAudit('TOURNAMENT_EDITED', id, updates);
+                showToast('Tournament updated successfully! 🏆');
+                closeEditTournamentModal();
+                loadTournamentsList();
+            } catch (err) {
+                showToast(err.message || 'Failed to update tournament', true);
+            } finally {
+                btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                btn.disabled = false;
+            }
+        });
+
+        // ══════════════════════════════════════════════════════════════
+        // ROLE & PASSES MANAGEMENT
+        // ══════════════════════════════════════════════════════════════
+        async function changeUserRole(uid, name, curRole) {
+            const role = prompt(`Change role for ${name}?\nEnter: user, moderator, or admin\n(Current: ${curRole})`, curRole);
+            if (!role) return;
+            const cleanRole = role.toLowerCase().trim();
+            if (!['user', 'moderator', 'admin'].includes(cleanRole)) {
+                return showToast('Invalid role! Choose: user, moderator, or admin', true);
+            }
+            try {
+                await db.ref(`users/${uid}/role`).set(cleanRole);
+                await logAudit('USER_ROLE_CHANGED', null, { target_uid: uid, old_role: curRole, new_role: cleanRole });
+                showToast(`Role updated to ${cleanRole.toUpperCase()} for ${name}! 🛡️`);
+                renderUsers(document.getElementById('adminUsersPage'));
+            } catch (e) {
+                showToast('Failed to update role: ' + e.message, true);
+            }
+        }
+
+        async function manageUserPasses(uid, name, curPasses) {
+            const val = prompt(`Update Free Tournament Passes for ${name} (Current: ${curPasses}):\nEnter positive number to add or negative to deduct:`, '1');
+            if (!val || isNaN(val)) return;
+            const num = Number(val);
+            const newCount = Math.max(0, curPasses + num);
+            try {
+                await db.ref(`users/${uid}/free_passes`).set(newCount);
+                showToast(`Updated Free Passes to ${newCount} for ${name}! 🎟️`);
+                renderUsers(document.getElementById('adminUsersPage'));
+            } catch (e) {
+                showToast('Failed to update passes', true);
+            }
         }
 
         // Actions
