@@ -109,7 +109,8 @@ async function authenticate(req) {
     throw new AuthError('Missing or invalid Authorization header');
   }
   const token = authHeader.slice(7).trim();
-  return await verifyFirebaseIdToken(token);
+  const payload = await verifyFirebaseIdToken(token);
+  return { uid: payload.uid, email: payload.email, token };
 }
 
 async function getAccessToken() {
@@ -179,81 +180,122 @@ async function getAccessToken() {
   return cachedAccessToken;
 }
 
-// RTDB REST API Helpers
-async function rtdbGet(path, accessToken) {
-  const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
-    headers: { 'Authorization': `Bearer ${accessToken}` }
+// RTDB REST API Helpers (Supports OAuth2 Access Token and Firebase User ID Token)
+async function rtdbGet(path, token) {
+  const url = `${FIREBASE_DB_URL}/${path}.json`;
+  let res = await fetch(url, {
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
   });
+  if (!res.ok && token) {
+    res = await fetch(`${url}?auth=${encodeURIComponent(token)}`);
+  }
   if (!res.ok) throw new Error(`RTDB GET ${path} failed: ${res.status}`);
   return await res.json();
 }
 
-async function rtdbGetWithEtag(path, accessToken) {
-  const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+async function rtdbGetWithEtag(path, token) {
+  const url = `${FIREBASE_DB_URL}/${path}.json`;
+  let res = await fetch(url, {
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       'X-Firebase-ETag': 'true'
     }
   });
+  if (!res.ok && token) {
+    res = await fetch(`${url}?auth=${encodeURIComponent(token)}`, {
+      headers: { 'X-Firebase-ETag': 'true' }
+    });
+  }
   if (!res.ok) throw new Error(`RTDB GET ${path} failed: ${res.status}`);
   const value = await res.json();
   const etag = res.headers.get('ETag');
   return { value, etag };
 }
 
-async function rtdbPutWithEtag(path, data, etag, accessToken) {
-  const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+async function rtdbPutWithEtag(path, data, etag, token) {
+  const url = `${FIREBASE_DB_URL}/${path}.json`;
+  let res = await fetch(url, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       'Content-Type': 'application/json',
       'if-match': etag
     },
     body: JSON.stringify(data)
   });
   if (res.status === 412) return false;
+  if (!res.ok && token) {
+    res = await fetch(`${url}?auth=${encodeURIComponent(token)}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'if-match': etag
+      },
+      body: JSON.stringify(data)
+    });
+  }
+  if (res.status === 412) return false;
   if (!res.ok) throw new Error(`RTDB PUT ${path} failed: ${res.status}`);
   return true;
 }
 
-async function rtdbConditionalSet(path, expectedValue, newValue, accessToken) {
-  const { value: current, etag } = await rtdbGetWithEtag(path, accessToken);
+async function rtdbConditionalSet(path, expectedValue, newValue, token) {
+  const { value: current, etag } = await rtdbGetWithEtag(path, token);
   if (current !== expectedValue) return false;
-  return await rtdbPutWithEtag(path, newValue, etag, accessToken);
+  return await rtdbPutWithEtag(path, newValue, etag, token);
 }
 
-async function rtdbUpdate(path, data, accessToken) {
-  const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+async function rtdbUpdate(path, data, token) {
+  const url = `${FIREBASE_DB_URL}/${path}.json`;
+  let res = await fetch(url, {
     method: 'PATCH',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(data)
   });
+  if (!res.ok && token) {
+    res = await fetch(`${url}?auth=${encodeURIComponent(token)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  }
   if (!res.ok) throw new Error(`RTDB PATCH ${path} failed: ${res.status}`);
   return await res.json();
 }
 
-async function rtdbPush(path, data, accessToken) {
-  const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+async function rtdbPush(path, data, token) {
+  const url = `${FIREBASE_DB_URL}/${path}.json`;
+  let res = await fetch(url, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(data)
   });
+  if (!res.ok && token) {
+    res = await fetch(`${url}?auth=${encodeURIComponent(token)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  }
   if (!res.ok) throw new Error(`RTDB POST ${path} failed: ${res.status}`);
   const result = await res.json();
   return result.name;
 }
 
-async function rtdbQuery(path, orderByChild, equalToValue, accessToken) {
+async function rtdbQuery(path, orderByChild, equalToValue, token) {
   const url = `${FIREBASE_DB_URL}/${path}.json?orderBy="${encodeURIComponent(orderByChild)}"&equalTo="${encodeURIComponent(equalToValue)}"`;
-  const res = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${accessToken}` }
+  let res = await fetch(url, {
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
   });
+  if (!res.ok && token) {
+    res = await fetch(`${url}&auth=${encodeURIComponent(token)}`);
+  }
   if (!res.ok) throw new Error(`RTDB query ${path} failed: ${res.status}`);
   return await res.json();
 }
