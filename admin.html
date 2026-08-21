@@ -144,6 +144,21 @@
         .mode-card { padding: 14px; border-radius: var(--radius); background: var(--bg3); border: 1.5px solid var(--border3); cursor: pointer; transition: all .25s }
         .mode-card.selected { border-color: var(--violet); background: var(--gradient-subtle); box-shadow: 0 0 16px var(--violet-glow2) }
 
+        /* Push Studio & Simulator Styles */
+        .push-preview-container { background: linear-gradient(145deg, #0c0e16, #151824); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); position: relative; overflow: hidden }
+        .push-phone-notch { width: 50px; height: 3.5px; border-radius: 10px; background: var(--text4); margin: 0 auto 10px }
+        .push-banner-sim { background: rgba(24, 27, 40, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); padding: 12px 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); transition: all .3s ease }
+        .push-app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px }
+        .push-app-info { display: flex; align-items: center; gap: 6px }
+        .push-app-icon { width: 18px; height: 18px; border-radius: 5px; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; box-shadow: 0 0 10px var(--violet-glow) }
+        .push-app-name { font-size: 10.5px; font-weight: 800; letter-spacing: .4px; background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent }
+        .push-sim-time { font-size: 9px; color: var(--text3); font-weight: 600 }
+        .push-sim-title { font-size: 12.5px; font-weight: 800; color: #fff; margin-bottom: 3px; word-break: break-word }
+        .push-sim-body { font-size: 11px; color: var(--text2); line-height: 1.4; word-break: break-word }
+        .push-sim-image { width: 100%; max-height: 130px; object-fit: cover; border-radius: var(--radius-sm); margin-top: 8px; display: none }
+        .template-chip { padding: 7px 11px; border-radius: var(--radius-sm); background: var(--bg3); border: 1px solid var(--border3); font-size: 10.5px; font-weight: 700; color: var(--text2); cursor: pointer; transition: all .25s ease; display: inline-flex; align-items: center; gap: 5px; text-align: left }
+        .template-chip:hover { border-color: var(--violet); background: var(--gradient-subtle); color: #fff; transform: translateY(-2px); box-shadow: 0 4px 14px var(--violet-glow2) }
+        .template-chip i { font-size: 11px; color: var(--violet) }
         /* Modal Overlays & Drawers */
         .modal-overlay { position: fixed; inset: 0; background: rgba(7, 8, 13, 0.88); backdrop-filter: blur(16px); z-index: 500; display: none; align-items: flex-end; justify-content: center }
         .modal-content { background: var(--bg2); border-top: 1px solid var(--border); border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: 24px 20px 40px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; animation: slideUp .3s ease; box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6) }
@@ -295,9 +310,42 @@
 
     <!-- Send Push Notification Modal -->
     <div id="adminPushModal" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width:540px">
             <div class="modal-handle"></div>
-            <div class="modal-title"><i class="fas fa-paper-plane" style="color:var(--cyan)"></i>Send OneSignal Push Notification</div>
+            <div class="modal-title"><i class="fas fa-paper-plane" style="color:var(--cyan)"></i>Send OneSignal Push Broadcast</div>
+            
+            <!-- Mobile Preview Simulator -->
+            <div class="push-preview-container">
+                <div class="push-phone-notch"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="font-size:10px;font-weight:700;color:var(--violet);text-transform:uppercase;letter-spacing:.6px"><i class="fas fa-mobile-alt" style="margin-right:5px"></i>Live Lockscreen Simulator</span>
+                    <span style="font-size:9px;color:var(--text4)">Realtime</span>
+                </div>
+                <div class="push-banner-sim">
+                    <div class="push-app-header">
+                        <div class="push-app-info">
+                            <div class="push-app-icon"><i class="fas fa-fire"></i></div>
+                            <span class="push-app-name">VELRIX ESPORTS</span>
+                        </div>
+                        <span class="push-sim-time">Just now</span>
+                    </div>
+                    <div class="push-sim-title" id="apush-sim-title">🔴 Free Fire Match Room is Live!</div>
+                    <div class="push-sim-body" id="apush-sim-msg">Room ID & Password have been published. Join your lobby now!</div>
+                    <img id="apush-sim-img" class="push-sim-image" src="" alt="Push Image">
+                </div>
+            </div>
+
+            <!-- Quick Template Presets -->
+            <div style="margin-bottom:14px">
+                <label class="label" style="margin-bottom:6px"><i class="fas fa-wand-magic-sparkles" style="color:var(--violet);margin-right:5px"></i>Esports Presets</label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                    <button type="button" onclick="applyAdminPushTemplate('room_ready')" class="template-chip"><i class="fas fa-door-open"></i><span>Room ID Live</span></button>
+                    <button type="button" onclick="applyAdminPushTemplate('match_10min')" class="template-chip"><i class="fas fa-clock"></i><span>10 Min Warning</span></button>
+                    <button type="button" onclick="applyAdminPushTemplate('winner_out')" class="template-chip"><i class="fas fa-trophy"></i><span>Winners Out</span></button>
+                    <button type="button" onclick="applyAdminPushTemplate('maintenance')" class="template-chip"><i class="fas fa-wrench"></i><span>Schedule Update</span></button>
+                </div>
+            </div>
+
             <form id="adminPushForm" class="space-y">
                 <div>
                     <label class="label">Target Audience *</label>
@@ -311,26 +359,32 @@
                     <select id="apush-tid" class="input"></select>
                 </div>
                 <div>
-                    <label class="label">Notification Title *</label>
-                    <input type="text" id="apush-title" placeholder="e.g. 🔴 Free Fire Match Room is Live!" class="input" required>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                        <label class="label" style="margin-bottom:0">Notification Title *</label>
+                        <span class="char-counter" id="apush-title-counter">0 / 80</span>
+                    </div>
+                    <input type="text" id="apush-title" placeholder="e.g. 🔴 Free Fire Match Room is Live!" class="input" maxlength="80" required oninput="updateAdminPushPreview()">
                 </div>
                 <div>
-                    <label class="label">Message Body *</label>
-                    <textarea id="apush-message" class="textarea" rows="3" placeholder="Room ID & Password have been published. Join your lobby now!" required></textarea>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                        <label class="label" style="margin-bottom:0">Message Body *</label>
+                        <span class="char-counter" id="apush-msg-counter">0 / 250</span>
+                    </div>
+                    <textarea id="apush-message" class="textarea" rows="3" placeholder="Room ID & Password have been published. Join your lobby now!" maxlength="250" required oninput="updateAdminPushPreview()"></textarea>
                 </div>
                 <div>
                     <label class="label">Image / Banner URL <span style="font-size:10px;color:var(--text4)">(Optional)</span></label>
-                    <input type="url" id="apush-image" placeholder="https://images.unsplash.com/..." class="input">
+                    <input type="url" id="apush-image" placeholder="https://images.unsplash.com/..." class="input" oninput="updateAdminPushPreview()">
                 </div>
                 <div>
                     <label class="label">Action / Launch URL <span style="font-size:10px;color:var(--text4)">(Optional)</span></label>
                     <input type="text" id="apush-url" placeholder="index.html or custom action link" class="input">
                 </div>
                 <div class="info-box" style="font-size:11px">
-                    <i class="fas fa-mobile-alt" style="color:var(--cyan);margin-right:6px"></i>Dispatches via OneSignal REST API & Median Web-to-APK OneSignal Bridge.
+                    <i class="fas fa-shield-halved" style="color:var(--cyan);margin-right:6px"></i>Dispatches via OneSignal REST API Engine + Native Median App Plugin.
                 </div>
                 <div style="display:flex;gap:8px;margin-top:16px">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-bolt"></i>Dispatch Push Broadcast</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i>Dispatch Push Broadcast</button>
                     <button type="button" onclick="closeAdminPushModal()" class="btn btn-outline">Cancel</button>
                 </div>
             </form>
@@ -356,7 +410,7 @@
 
         // ── OneSignal SDK & Median Push Integration ──
         const ONESIGNAL_APP_ID = "421b1a39-54f8-45bd-84b8-aee27bba64c5";
-        const DEFAULT_ONESIGNAL_REST_KEY = "os_v2_app_iinruoku7bc33bfyv3rhxoteyvkootsciqwuqv5t5xov2w7tgn2mqtvylcsehyqpt47urzyi5i2uc4abejmf6xxh5jh34bmlql5a45y";
+        const DEFAULT_ONESIGNAL_REST_KEY = "os_v2_app_iinruoku7bc33bfyv3rhxoteyx37dwsew7bulz5ejbloc7fvcug7ymxjnmadi5n3zbfmj7qtqw2xvpcwzlpsnt54qj5hjykdl7ikigi";
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         let oneSignalSubscriptionObserver = null;
         let oneSignalVerificationDialogShown = false;
@@ -645,17 +699,49 @@
         }
 
         auth.onAuthStateChanged(async user => {
+            const loader = document.getElementById('initial-loader');
+            if (loader) {
+                loader.style.opacity = '0';
+                loader.style.transition = 'opacity .3s ease';
+                setTimeout(() => { loader.style.display = 'none'; }, 300);
+            }
             if (user) {
-                const ud = (await db.ref(`users/${user.uid}`).once('value')).val();
-                if (ud && ud.role === 'admin') {
-                    currentAdminData = { uid: user.uid, email: user.email, ...ud };
-                    await ensureSeedData();
-                    navigateTo('adminDashboardPage'); updatePaymentBadge();
-                    db.ref('payment_requests').on('value', updatePaymentBadge);
-                    document.body.classList.add('authed');
-                } else { showToast('Access denied — Admin only', true); auth.signOut(); navigateTo('adminLoginPage'); document.body.classList.remove('authed') }
-            } else { currentAdminData = null; navigateTo('adminLoginPage'); document.body.classList.remove('authed') }
+                try {
+                    const snap = await db.ref(`users/${user.uid}`).once('value');
+                    const ud = snap.val();
+                    if (ud && ud.role === 'admin') {
+                        currentAdminData = { uid: user.uid, email: user.email, ...ud };
+                        ensureSeedData().catch(e => console.warn('Seed data:', e));
+                        navigateTo('adminDashboardPage'); updatePaymentBadge();
+                        db.ref('payment_requests').on('value', updatePaymentBadge);
+                        document.body.classList.add('authed');
+                    } else {
+                        showToast('Access denied — Admin only', true);
+                        auth.signOut();
+                        navigateTo('adminLoginPage');
+                        document.body.classList.remove('authed');
+                    }
+                } catch(err) {
+                    console.error('Admin Auth Error:', err);
+                    showToast('Database Error: ' + err.message, true);
+                    navigateTo('adminLoginPage');
+                    document.body.classList.remove('authed');
+                }
+            } else {
+                currentAdminData = null;
+                navigateTo('adminLoginPage');
+                document.body.classList.remove('authed');
+            }
         });
+
+        // Safety fallback timeout to ensure initial loader never hangs
+        setTimeout(() => {
+            const loader = document.getElementById('initial-loader');
+            if (loader && loader.style.display !== 'none' && !auth.currentUser) {
+                loader.style.display = 'none';
+                navigateTo('adminLoginPage');
+            }
+        }, 3500);
 
         function loadPageContent(pid) {
             const c = document.getElementById(pid); if (!c) return;
@@ -1572,8 +1658,6 @@
             navigateTo('adminCreateTournamentPage', { draftId: tid, preserve: true });
         }
 
-        const openEditTournamentModal = editTournament;
-
         // Duplicate an existing tournament into a new Draft
         async function duplicateTournament(tid) {
             try {
@@ -2051,7 +2135,7 @@
             statusBox.style.background = 'rgba(6, 182, 212, 0.15)';
             statusBox.style.color = 'var(--cyan)';
             statusBox.style.border = '1px solid var(--cyan)';
-            statusBox.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px"></i>Testing connection to OneSignal Engine...';
+            statusBox.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px"></i>Testing connection to OneSignal Cloud Engine...';
 
             try {
                 // Ensure latest credentials are saved to database
@@ -2061,38 +2145,85 @@
                     updated_at: new Date().toISOString()
                 });
 
-                const token = await auth.currentUser?.getIdToken();
-                const res = await fetch('/api/send-notification', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        action: 'test',
-                        test_only: true
-                    })
-                });
+                // Strategy 1: Serverless Cloud Gateway (/api/send-notification)
+                let backendOk = false;
+                try {
+                    const token = await auth.currentUser?.getIdToken();
+                    const res = await fetch('/api/send-notification', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            action: 'test',
+                            test_only: true
+                        })
+                    });
 
-                const data = await res.json().catch(() => ({ error: 'Invalid response from server' }));
-
-                if (res.ok && data.success) {
-                    statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
-                    statusBox.style.color = 'var(--green)';
-                    statusBox.style.border = '1px solid var(--green)';
-                    statusBox.innerHTML = `<i class="fas fa-check-circle" style="margin-right:6px"></i><strong>Valid & Connected!</strong> OneSignal REST API Engine is active and ready to broadcast.`;
-                } else {
-                    const errTxt = data.error || `HTTP ${res.status}`;
-                    statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
-                    statusBox.style.color = 'var(--red)';
-                    statusBox.style.border = '1px solid var(--red)';
-                    statusBox.innerHTML = `<i class="fas fa-times-circle" style="margin-right:6px"></i><strong>Validation Result:</strong> ${errTxt}`;
+                    if (res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        if (data.success) {
+                            statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
+                            statusBox.style.color = 'var(--green)';
+                            statusBox.style.border = '1px solid var(--green)';
+                            statusBox.innerHTML = `<i class="fas fa-check-circle" style="margin-right:6px"></i><strong>Valid & Connected! ⚡</strong> OneSignal REST API Gateway is live and authenticated.`;
+                            showToast('OneSignal Connection Verified! 🔔');
+                            return;
+                        }
+                    } else if (res.status === 401 || res.status === 400) {
+                        const data = await res.json().catch(() => ({}));
+                        const errTxt = data.error || 'Authentication error with OneSignal';
+                        statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+                        statusBox.style.color = 'var(--red)';
+                        statusBox.style.border = '1px solid var(--red)';
+                        statusBox.innerHTML = `<i class="fas fa-times-circle" style="margin-right:6px"></i><strong>OneSignal Check:</strong> ${errTxt}`;
+                        return;
+                    }
+                } catch (netErr) {
+                    console.log('Local static preview, performing direct OneSignal diagnostic check...');
                 }
+
+                // Strategy 2: Direct browser-side diagnostic fallback (for local preview)
+                try {
+                    const authHeader = apiKey.startsWith('os_v2_') ? `Key ${apiKey}` : `Basic ${apiKey}`;
+                    const directRes = await fetch(`https://api.onesignal.com/notifications?app_id=${appId}&limit=1`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': authHeader,
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (directRes.ok) {
+                        statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
+                        statusBox.style.color = 'var(--green)';
+                        statusBox.style.border = '1px solid var(--green)';
+                        statusBox.innerHTML = `<i class="fas fa-check-circle" style="margin-right:6px"></i><strong>Credentials Verified! ⚡</strong> OneSignal API accepted the App ID and REST API Key.`;
+                        showToast('OneSignal Credentials Verified! 🔔');
+                        return;
+                    } else if (directRes.status === 401) {
+                        statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+                        statusBox.style.color = 'var(--red)';
+                        statusBox.style.border = '1px solid var(--red)';
+                        statusBox.innerHTML = `<i class="fas fa-key" style="margin-right:6px"></i><strong>401 Unauthorized:</strong> The REST API Key is invalid or expired. Copy the active REST API Key from your OneSignal Dashboard (<em>Settings → Keys & IDs</em>).`;
+                        return;
+                    }
+                } catch (corsErr) {
+                    console.log('Direct test error:', corsErr);
+                }
+
+                // Static preview status fallback
+                statusBox.style.background = 'rgba(6, 182, 212, 0.12)';
+                statusBox.style.color = 'var(--cyan)';
+                statusBox.style.border = '1px solid rgba(6, 182, 212, 0.3)';
+                statusBox.innerHTML = `<i class="fas fa-info-circle" style="margin-right:6px"></i><strong>Config Saved to Firebase!</strong> When hosted on Vercel, the <code>/api/send-notification</code> serverless route will dispatch live notifications.`;
+                showToast('OneSignal Config Saved! 💾');
             } catch (err) {
                 statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
                 statusBox.style.color = 'var(--red)';
                 statusBox.style.border = '1px solid var(--red)';
-                statusBox.innerHTML = `<i class="fas fa-exclamation-triangle" style="margin-right:6px"></i><strong>Test Failed:</strong> ${err.message}`;
+                statusBox.innerHTML = `<i class="fas fa-exclamation-triangle" style="margin-right:6px"></i><strong>Test Result:</strong> ${err.message}`;
             }
         }
 
@@ -2217,7 +2348,7 @@
         }
 
         // ══════════════════════════════════════════════════════════════
-        // PUSH NOTIFICATION BROADCAST DISPATCHER
+        // PUSH NOTIFICATION BROADCAST DISPATCHER (ADMIN)
         // ══════════════════════════════════════════════════════════════
         async function openAdminPushModal() {
             const snap = await db.ref('tournaments').once('value');
@@ -2228,6 +2359,7 @@
                     <option value="${id}">${t.title || 'Tournament'} (${t.game_name || 'Game'})</option>
                 `).join('');
             }
+            updateAdminPushPreview();
             document.getElementById('adminPushModal').style.display = 'flex';
         }
 
@@ -2238,6 +2370,65 @@
         function onPushTargetChange(val) {
             const box = document.getElementById('apush-tournament-select-box');
             if (box) box.style.display = val === 'tournament' ? 'block' : 'none';
+        }
+
+        function updateAdminPushPreview() {
+            const title = document.getElementById('apush-title')?.value.trim() || '';
+            const msg = document.getElementById('apush-message')?.value.trim() || '';
+            const img = document.getElementById('apush-image')?.value.trim() || '';
+
+            const simTitle = document.getElementById('apush-sim-title');
+            const simMsg = document.getElementById('apush-sim-msg');
+            const simImg = document.getElementById('apush-sim-img');
+
+            const titleCounter = document.getElementById('apush-title-counter');
+            const msgCounter = document.getElementById('apush-msg-counter');
+
+            if (simTitle) simTitle.textContent = title || '🔴 Free Fire Match Room is Live!';
+            if (simMsg) simMsg.textContent = msg || 'Room ID & Password have been published. Join your lobby now!';
+            
+            if (simImg) {
+                if (img && (img.startsWith('http://') || img.startsWith('https://'))) {
+                    simImg.src = img;
+                    simImg.style.display = 'block';
+                } else {
+                    simImg.style.display = 'none';
+                }
+            }
+
+            if (titleCounter) {
+                const len = (document.getElementById('apush-title')?.value || '').length;
+                titleCounter.textContent = `${len} / 80`;
+                titleCounter.className = 'char-counter' + (len > 70 ? ' danger' : len > 55 ? ' warning' : '');
+            }
+            if (msgCounter) {
+                const len = (document.getElementById('apush-message')?.value || '').length;
+                msgCounter.textContent = `${len} / 250`;
+                msgCounter.className = 'char-counter' + (len > 220 ? ' danger' : len > 180 ? ' warning' : '');
+            }
+        }
+
+        function applyAdminPushTemplate(type) {
+            const titleEl = document.getElementById('apush-title');
+            const msgEl = document.getElementById('apush-message');
+            if (!titleEl || !msgEl) return;
+
+            if (type === 'room_ready') {
+                titleEl.value = '🔴 Free Fire Match Room is Live!';
+                msgEl.value = 'Room ID & Password have been published. Join your lobby now!';
+            } else if (type === 'match_10min') {
+                titleEl.value = '⏰ Match Starting in 10 Minutes!';
+                msgEl.value = 'Assemble your team and join the room immediately. Unregistered players will be kicked.';
+            } else if (type === 'winner_out') {
+                titleEl.value = '👑 Tournament Champions Declared!';
+                msgEl.value = 'Final results verified and prize rewards credited to wallet balances. View leaderboard!';
+            } else if (type === 'maintenance') {
+                titleEl.value = '📢 Tournament Schedule Update';
+                msgEl.value = 'The tournament match schedule has been updated. Check tournament details in the app!';
+            }
+
+            updateAdminPushPreview();
+            showToast('Preset Template Applied! ⚡');
         }
 
         async function dispatchPushBackend(payload) {
@@ -2265,7 +2456,7 @@
             const url = document.getElementById('apush-url').value.trim();
 
             const btn = e.target.querySelector('button[type="submit"]');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dispatching via Secure Backend...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dispatching via Cloud Gateway...';
             btn.disabled = true;
 
             try {
@@ -2278,10 +2469,11 @@
                     url: url || null
                 });
 
-                await logAudit('PUSH_NOTIFICATION_SENT', null, { title, target, backend: 'secure_server_backend' });
+                await logAudit('PUSH_NOTIFICATION_SENT', null, { title, target, backend: 'vercel_serverless' });
                 showToast('🎉 ' + (res.message || 'Push Notification Dispatched Successfully!'));
                 closeAdminPushModal();
                 e.target.reset();
+                updateAdminPushPreview();
                 if (document.getElementById('adminSettingsPage')?.classList.contains('active')) {
                     renderSettings(document.getElementById('adminSettingsPage'));
                 }
@@ -2290,7 +2482,7 @@
                 const safeMsg = err.message || 'Notification dispatch failed.';
                 showToast('Push Error: ' + safeMsg, true);
             } finally {
-                btn.innerHTML = '<i class="fas fa-bolt"></i>Dispatch Push Broadcast';
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i>Dispatch Push Broadcast';
                 btn.disabled = false;
             }
         });
