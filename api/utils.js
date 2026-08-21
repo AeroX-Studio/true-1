@@ -50,7 +50,7 @@ const UDDOKTAPAY_BASE_URL = (process.env.UDDOKTAPAY_BASE_URL || 'https://aerox.p
 
 // OneSignal Configuration Defaults
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || '421b1a39-54f8-45bd-84b8-aee27bba64c5';
-const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || 'os_v2_app_iinruoku7bc33bfyv3rhxoteyx37dwsew7bulz5ejbloc7fvcug7ymxjnmadi5n3zbfmj7qtqw2xvpcwzlpsnt54qj5hjykdl7ikigi';
+const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || '';
 
 function formatOneSignalAuthHeader(apiKey) {
   if (!apiKey) return '';
