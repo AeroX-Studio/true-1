@@ -308,6 +308,55 @@
         </div>
     </div>
 
+    <!-- Assign Custom Referral Code Modal -->
+    <div id="adminCustomRefModal" class="modal-overlay">
+        <div class="modal-content" style="max-width:480px">
+            <div class="modal-handle"></div>
+            <div class="modal-title"><i class="fas fa-gift" style="color:var(--cyan)"></i>Assign Custom Referral Code</div>
+            
+            <div style="padding:14px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border3);margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                        <p style="font-weight:800;font-size:14px;color:#fff" id="cref-username">Player Name</p>
+                        <p style="font-size:11px;color:var(--text3);margin-top:2px" id="cref-email">user@email.com</p>
+                    </div>
+                    <div style="text-align:right">
+                        <span class="label" style="margin-bottom:2px;font-size:9px">Current Code</span>
+                        <span class="badge badge-approved" id="cref-current-code" style="font-family:monospace;letter-spacing:1px">NONE</span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="adminCustomRefForm" class="space-y">
+                <input type="hidden" id="cref-uid">
+                <input type="hidden" id="cref-old-code">
+                
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <label class="label" style="margin-bottom:0">New Custom Referral Code *</label>
+                        <span style="font-size:10px;font-weight:700;color:var(--text4)" id="cref-char-count">0 / 20</span>
+                    </div>
+                    <input type="text" id="cref-input-code" placeholder="e.g. VIPBOSS, PRO99, STREAMER" class="input" style="font-family:monospace;font-weight:800;letter-spacing:1.5px;text-transform:uppercase" maxlength="20" required oninput="onCustomRefInput(this.value)">
+                </div>
+
+                <div id="cref-status-hint" style="font-size:11px;color:var(--text3);padding:10px 12px;background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.18);border-radius:var(--radius-sm);line-height:1.4">
+                    <i class="fas fa-info-circle" style="color:var(--cyan);margin-right:6px"></i>Must be 3-20 characters (A-Z, 0-9, _). When assigned, new players registering with this code will attribute all invites and bonus rewards to this user.
+                </div>
+
+                <!-- Quick Presets for Generator -->
+                <div>
+                    <label class="label" style="margin-bottom:6px"><i class="fas fa-wand-magic-sparkles" style="color:var(--violet);margin-right:5px"></i>Quick Suggestions</label>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap" id="cref-suggestions"></div>
+                </div>
+
+                <div style="display:flex;gap:8px;margin-top:18px">
+                    <button type="submit" class="btn btn-primary" id="cref-save-btn"><i class="fas fa-check-circle"></i>Assign Referral Code</button>
+                    <button type="button" onclick="closeCustomRefModal()" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Send Push Notification Modal -->
     <div id="adminPushModal" class="modal-overlay">
         <div class="modal-content" style="max-width:540px">
@@ -1905,25 +1954,36 @@
                     ? '<span class="badge" style="font-size:8px;margin-left:4px;background:var(--cyan-glow);color:var(--cyan);border:1px solid rgba(6,182,212,0.4)">🛡️ Moderator</span>' 
                     : '<span class="badge" style="font-size:8px;margin-left:4px;background:rgba(255,255,255,0.06);color:var(--text3)">Player</span>';
                 
+                const safeName = (u.username || 'User').replace(/['"]/g, '');
+                const safeEmail = (u.email || '').replace(/['"]/g, '');
+                const safeRefCode = (u.referral_code || '').replace(/['"]/g, '');
+
                 return `
                 <div class="card fade-up" style="padding:16px;margin-bottom:10px">
                     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
                         <div>
                             <p style="font-weight:700;font-size:14px">${u.username || 'User'} ${roleBadge}</p>
                             <p style="font-size:11px;color:var(--text4);margin-top:2px">${u.email || 'No email'}</p>
-                            <p style="font-size:10px;color:var(--text3);margin-top:2px">UID: <code style="font-family:monospace">${uid.slice(0,10)}...</code></p>
+                            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap">
+                                <span style="font-size:10px;color:var(--text3)">UID: <code style="font-family:monospace">${uid.slice(0,8)}...</code></span>
+                                <span style="font-size:10px;color:var(--text4)">•</span>
+                                <span style="font-size:10px;color:var(--text3)">Ref: <strong style="color:var(--cyan);font-family:monospace;letter-spacing:.5px">${u.referral_code ? u.referral_code : '<span style="color:var(--text4)">None</span>'}</strong></span>
+                                <span style="font-size:10px;color:var(--text4)">•</span>
+                                <span style="font-size:10px;color:var(--text3)">Invites: <strong style="color:var(--yellow)">${u.referral_count || 0}</strong></span>
+                            </div>
                         </div>
                         <div style="text-align:right">
                             <p style="font-size:15px;font-weight:900;color:var(--green)">${fmt(u.wallet_balance||0)}</p>
                             <span class="badge" style="background:rgba(139,92,246,0.12);color:var(--violet);font-size:9px;margin-top:4px">🎟️ ${u.free_passes || 0} Passes</span>
                         </div>
                     </div>
-                    <div style="display:grid;grid-template-columns:${isMod ? '1fr 1fr 1fr 1fr 1fr' : '1fr 1fr 1fr 1fr'};gap:6px;margin-top:10px">
-                        <button onclick="changeUserRole('${uid}','${u.username||'User'}','${u.role||'user'}')" class="btn btn-warning btn-sm" title="Change Role"><i class="fas fa-user-shield"></i>Role</button>
-                        ${isMod ? `<button onclick="openModPermissionsModal('${uid}','${u.username||'Moderator'}','${u.email||''}')" class="btn btn-primary btn-sm" style="background:var(--cyan);color:#07080D;font-weight:800" title="Configure Moderator Access"><i class="fas fa-key"></i>Perms</button>` : ''}
-                        <button onclick="addMoneyToUser('${uid}','${u.username||'User'}')" class="btn btn-secondary btn-sm" title="Add Funds"><i class="fas fa-plus"></i>+৳</button>
-                        <button onclick="deductMoneyFromUser('${uid}','${u.username||'User'}')" class="btn btn-outline btn-sm" title="Deduct Funds"><i class="fas fa-minus"></i>-৳</button>
-                        <button onclick="manageUserPasses('${uid}','${u.username||'User'}',${u.free_passes||0})" class="btn btn-primary btn-sm" title="Tournament Passes"><i class="fas fa-ticket-alt"></i>Passes</button>
+                    <div style="display:grid;grid-template-columns:${isMod ? '1fr 1fr 1.1fr 1fr 1fr 1fr' : '1fr 1.2fr 1fr 1fr 1fr'};gap:6px;margin-top:10px">
+                        <button onclick="changeUserRole('${uid}','${safeName}','${u.role||'user'}')" class="btn btn-warning btn-sm" title="Change Role"><i class="fas fa-user-shield"></i>Role</button>
+                        ${isMod ? `<button onclick="openModPermissionsModal('${uid}','${safeName}','${safeEmail}')" class="btn btn-primary btn-sm" style="background:var(--cyan);color:#07080D;font-weight:800" title="Configure Moderator Access"><i class="fas fa-key"></i>Perms</button>` : ''}
+                        <button onclick="openCustomRefModal('${uid}','${safeName}','${safeEmail}','${safeRefCode}')" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6);color:#fff;font-weight:700" title="Assign Custom Referral Code"><i class="fas fa-gift"></i>Ref Code</button>
+                        <button onclick="addMoneyToUser('${uid}','${safeName}')" class="btn btn-secondary btn-sm" title="Add Funds"><i class="fas fa-plus"></i>+৳</button>
+                        <button onclick="deductMoneyFromUser('${uid}','${safeName}')" class="btn btn-outline btn-sm" title="Deduct Funds"><i class="fas fa-minus"></i>-৳</button>
+                        <button onclick="manageUserPasses('${uid}','${safeName}',${u.free_passes||0})" class="btn btn-primary btn-sm" title="Tournament Passes"><i class="fas fa-ticket-alt"></i>Passes</button>
                     </div>
                 </div>`;
             }).join('');
@@ -2615,6 +2675,145 @@
                 showToast('Failed to update passes', true);
             }
         }
+
+        // ── Custom Referral Code Assignment ──
+        function openCustomRefModal(uid, name, email, curCode) {
+            const modal = document.getElementById('adminCustomRefModal');
+            if (!modal) return;
+            document.getElementById('cref-uid').value = uid;
+            document.getElementById('cref-old-code').value = curCode || '';
+            document.getElementById('cref-username').textContent = name || 'User';
+            document.getElementById('cref-email').textContent = email || 'No email provided';
+            
+            const currentBadge = document.getElementById('cref-current-code');
+            if (currentBadge) {
+                currentBadge.textContent = curCode || 'NONE';
+                currentBadge.className = curCode ? 'badge badge-approved' : 'badge badge-draft';
+            }
+
+            const input = document.getElementById('cref-input-code');
+            if (input) {
+                input.value = curCode || '';
+                onCustomRefInput(input.value);
+            }
+
+            // Generate 3 quick suggestions
+            const cleanPrefix = (name || 'USER').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || 'VIP';
+            const year = new Date().getFullYear();
+            const suggestions = [
+                `${cleanPrefix}VIP`,
+                `${cleanPrefix}PRO`,
+                `${cleanPrefix}${year}`
+            ];
+
+            const suggContainer = document.getElementById('cref-suggestions');
+            if (suggContainer) {
+                suggContainer.innerHTML = suggestions.map(s => `
+                    <button type="button" onclick="applyRefSuggestion('${s}')" class="template-chip" style="font-family:monospace;font-size:11px;font-weight:800">
+                        <i class="fas fa-tag"></i><span>${s}</span>
+                    </button>
+                `).join('');
+            }
+
+            modal.style.display = 'flex';
+            input?.focus();
+        }
+
+        function closeCustomRefModal() {
+            const modal = document.getElementById('adminCustomRefModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function onCustomRefInput(val) {
+            const input = document.getElementById('cref-input-code');
+            const sanitized = (val || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 20);
+            if (input && input.value !== sanitized) {
+                input.value = sanitized;
+            }
+            const countEl = document.getElementById('cref-char-count');
+            if (countEl) {
+                countEl.textContent = `${sanitized.length} / 20`;
+                countEl.style.color = sanitized.length >= 3 ? 'var(--cyan)' : 'var(--text4)';
+            }
+        }
+
+        function applyRefSuggestion(code) {
+            const input = document.getElementById('cref-input-code');
+            if (input) {
+                input.value = code;
+                onCustomRefInput(code);
+            }
+        }
+
+        document.getElementById('adminCustomRefForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const btn = document.getElementById('cref-save-btn');
+            const uid = document.getElementById('cref-uid').value;
+            const oldCode = (document.getElementById('cref-old-code').value || '').trim();
+            const inputVal = (document.getElementById('cref-input-code').value || '').toUpperCase().trim();
+            const cleanCode = inputVal.replace(/[^A-Z0-9_-]/g, '');
+
+            if (!uid) return showToast('User ID missing', true);
+            if (cleanCode.length < 3) {
+                return showToast('Referral code must be at least 3 characters!', true);
+            }
+
+            // If same code unchanged, just close
+            if (oldCode && oldCode === cleanCode) {
+                showToast('Referral code is already set to ' + cleanCode);
+                closeCustomRefModal();
+                return;
+            }
+
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking availability...';
+                btn.disabled = true;
+            }
+
+            try {
+                // Check if code is already registered in /referral_codes
+                const existingRefSnap = await db.ref(`referral_codes/${cleanCode}`).once('value');
+                const existingOwnerUid = existingRefSnap.val();
+
+                if (existingOwnerUid && existingOwnerUid !== uid) {
+                    throw new Error(`Referral code "${cleanCode}" is already taken by another user!`);
+                }
+
+                // Check if code is registered directly on another user's profile
+                const matchSnap = await db.ref('users').orderByChild('referral_code').equalTo(cleanCode).once('value');
+                if (matchSnap.exists()) {
+                    const matchedUid = Object.keys(matchSnap.val())[0];
+                    if (matchedUid && matchedUid !== uid) {
+                        throw new Error(`Referral code "${cleanCode}" is already assigned to user ${matchedUid.slice(0, 8)}!`);
+                    }
+                }
+
+                if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning...';
+
+                const updates = {};
+                // If user had previous code, remove old index
+                if (oldCode && oldCode !== cleanCode) {
+                    updates[`referral_codes/${oldCode}`] = null;
+                }
+                // Set new index and profile attribute
+                updates[`referral_codes/${cleanCode}`] = uid;
+                updates[`users/${uid}/referral_code`] = cleanCode;
+
+                await db.ref().update(updates);
+                await logAudit('CUSTOM_REFERRAL_CODE_ASSIGNED', null, { target_uid: uid, old_code: oldCode || null, new_code: cleanCode });
+
+                showToast(`🎉 Custom Referral Code "${cleanCode}" assigned successfully!`);
+                closeCustomRefModal();
+                renderUsers(document.getElementById('adminUsersPage'));
+            } catch (err) {
+                showToast(err.message || 'Failed to assign referral code', true);
+            } finally {
+                if (btn) {
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i>Assign Referral Code';
+                    btn.disabled = false;
+                }
+            }
+        });
 
         // Actions
         async function updateRoomDetails(e) {
