@@ -34,7 +34,7 @@
         body { background: var(--bg); color: var(--text); overflow-x: hidden; -webkit-user-select: none; user-select: none; min-height: 100vh }
         body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 20% 15%, rgba(139, 92, 246, 0.07), transparent 50%), radial-gradient(ellipse at 80% 85%, rgba(6, 182, 212, 0.05), transparent 50%); pointer-events: none; z-index: 0 }
         ::-webkit-scrollbar { width: 4px; height: 4px } ::-webkit-scrollbar-track { background: transparent } ::-webkit-scrollbar-thumb { background: var(--violet); border-radius: 10px }
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none } input[type=number] { -moz-appearance: textfield }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0 } input[type=number] { -moz-appearance: textfield; appearance: textfield }
 
         /* Animations */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
@@ -1932,29 +1932,30 @@
         let tempReferralTiers = [];
 
         async function renderSettings(c) {
-            const [bdSnap, refSnap, osSnap, pushSnap] = await Promise.all([
-                db.ref('app_settings/banner').once('value'),
-                db.ref('app_settings/referral_plans').once('value'),
-                db.ref('app_settings/onesignal').once('value'),
-                db.ref('push_notifications_history').limitToLast(10).once('value')
-            ]);
-            const bd = bdSnap.val() || { title: "Welcome to Velrix Tournaments", subtitle: "Compete. Win. Dominate.", enabled: true };
-            const refConfig = refSnap.val() || {
-                enabled: true,
-                default_invite_milestone: 5,
-                default_reward_type: 'free_pass',
-                default_reward_label: '1 Free Tournament Entry Pass',
-                tiers: [
-                    { id: 'tier_1', invites: 3, reward_type: 'coins', reward_value: 30, reward_label: '৳30 Bonus Cash', icon: '🎁' },
-                    { id: 'tier_2', invites: 5, reward_type: 'free_pass', reward_value: 1, reward_label: '1 Free Tournament Entry Pass', icon: '🎟️' },
-                    { id: 'tier_3', invites: 10, reward_type: 'coins', reward_value: 100, reward_label: '৳100 Bonus Cash + VIP', icon: '👑' },
-                    { id: 'tier_4', invites: 25, reward_type: 'free_pass', reward_value: 3, reward_label: '3 Free Tournament Passes', icon: '⚡' }
-                ]
-            };
-            tempReferralTiers = refConfig.tiers ? JSON.parse(JSON.stringify(refConfig.tiers)) : [];
-            const osConfig = osSnap.val() || { app_id: ONESIGNAL_APP_ID, rest_api_key: DEFAULT_ONESIGNAL_REST_KEY };
-            const pushHistory = pushSnap.val() || {};
-            const pushList = Object.entries(pushHistory).reverse();
+            try {
+                const [bdSnap, refSnap, osSnap, pushSnap] = await Promise.all([
+                    db.ref('app_settings/banner').once('value').catch(() => ({ val: () => null })),
+                    db.ref('app_settings/referral_plans').once('value').catch(() => ({ val: () => null })),
+                    db.ref('app_settings/onesignal').once('value').catch(() => ({ val: () => null })),
+                    db.ref('push_notifications_history').limitToLast(10).once('value').catch(() => ({ val: () => null }))
+                ]);
+                const bd = bdSnap.val() || { title: "Welcome to Velrix Tournaments", subtitle: "Compete. Win. Dominate.", enabled: true };
+                const refConfig = refSnap.val() || {
+                    enabled: true,
+                    default_invite_milestone: 5,
+                    default_reward_type: 'free_pass',
+                    default_reward_label: '1 Free Tournament Entry Pass',
+                    tiers: [
+                        { id: 'tier_1', invites: 3, reward_type: 'coins', reward_value: 30, reward_label: '৳30 Bonus Cash', icon: '🎁' },
+                        { id: 'tier_2', invites: 5, reward_type: 'free_pass', reward_value: 1, reward_label: '1 Free Tournament Entry Pass', icon: '🎟️' },
+                        { id: 'tier_3', invites: 10, reward_type: 'coins', reward_value: 100, reward_label: '৳100 Bonus Cash + VIP', icon: '👑' },
+                        { id: 'tier_4', invites: 25, reward_type: 'free_pass', reward_value: 3, reward_label: '3 Free Tournament Passes', icon: '⚡' }
+                    ]
+                };
+                tempReferralTiers = refConfig.tiers ? JSON.parse(JSON.stringify(refConfig.tiers)) : [];
+                const osConfig = osSnap.val() || { app_id: ONESIGNAL_APP_ID, rest_api_key: '' };
+                const pushHistory = pushSnap.val() || {};
+                const pushList = Object.entries(pushHistory).reverse();
 
             c.innerHTML = `<div style="padding:20px" class="fade-in">
             <div class="section-title"><i class="fas fa-cog" style="color:var(--text3)"></i>Settings & Config</div>
@@ -2100,6 +2101,20 @@
                 });
                 showToast('Referral Plans Saved Successfully! 🎁');
             });
+            } catch (err) {
+                console.error('[renderSettings Error]:', err);
+                c.innerHTML = `
+                    <div style="padding:20px" class="fade-in">
+                        <div class="section-title"><i class="fas fa-cog" style="color:var(--text3)"></i>Settings & Config</div>
+                        <div class="card" style="text-align:center;padding:30px">
+                            <i class="fas fa-exclamation-triangle" style="font-size:32px;color:var(--red);margin-bottom:12px"></i>
+                            <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Failed to Load Settings</h3>
+                            <p style="font-size:12px;color:var(--text3);margin-bottom:16px">${err.message}</p>
+                            <button onclick="renderSettings(document.getElementById('adminSettingsPage'))" class="btn btn-primary btn-sm" style="width:auto;margin:0 auto"><i class="fas fa-redo"></i>Retry</button>
+                        </div>
+                    </div>
+                `;
+            }
         }
 
         function toggleOsKeyVisibility() {
