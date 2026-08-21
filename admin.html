@@ -410,7 +410,6 @@
 
         // ── OneSignal SDK & Median Push Integration ──
         const ONESIGNAL_APP_ID = "421b1a39-54f8-45bd-84b8-aee27bba64c5";
-        const DEFAULT_ONESIGNAL_REST_KEY = "os_v2_app_iinruoku7bc33bfyv3rhxoteyx37dwsew7bulz5ejbloc7fvcug7ymxjnmadi5n3zbfmj7qtqw2xvpcwzlpsnt54qj5hjykdl7ikigi";
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         let oneSignalSubscriptionObserver = null;
         let oneSignalVerificationDialogShown = false;
@@ -1977,7 +1976,7 @@
                     <div>
                         <label class="label">OneSignal REST API Key *</label>
                         <div style="display:flex;gap:6px">
-                            <input type="password" id="os-config-api-key" value="${osConfig.rest_api_key || DEFAULT_ONESIGNAL_REST_KEY}" placeholder="os_v2_app_... or your OneSignal REST API Key" class="input" required style="font-family:monospace">
+                            <input type="password" id="os-config-api-key" value="${osConfig.rest_api_key || ''}" placeholder="os_v2_app_... (Paste your OneSignal REST API Key)" class="input" required style="font-family:monospace">
                             <button type="button" onclick="toggleOsKeyVisibility()" class="btn btn-secondary btn-sm" style="width:auto;padding:0 12px" title="Show/Hide Key"><i id="os-key-eye-icon" class="fas fa-eye"></i></button>
                         </div>
                         <p style="font-size:10px;color:var(--text4);margin-top:4px"><i class="fas fa-info-circle" style="color:var(--cyan)"></i> Configured for OneSignal REST Engine v2. Saved securely to your server configuration.</p>
@@ -2157,7 +2156,9 @@
                         },
                         body: JSON.stringify({
                             action: 'test',
-                            test_only: true
+                            test_only: true,
+                            app_id: appId,
+                            rest_api_key: apiKey
                         })
                     });
 
