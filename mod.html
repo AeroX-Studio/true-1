@@ -179,6 +179,32 @@
         /* Prize Pool Allocator */
         .prize-bar { height: 8px; background: var(--bg5); border-radius: 10px; overflow: hidden; display: flex; margin: 12px 0 }
         .prize-bar-segment { height: 100%; transition: width .3s ease }
+
+        /* Push Studio & Smartphone Live Preview */
+        .push-status-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius); margin-bottom: 16px; gap: 10px }
+        .push-status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: .5px }
+        .push-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulseDot 1.5s infinite }
+        .push-preview-container { background: linear-gradient(145deg, #0c0e16, #151824); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); position: relative; overflow: hidden }
+        .push-preview-container::before { content: ''; position: absolute; top: 0; right: 0; width: 150px; height: 150px; background: radial-gradient(circle, var(--cyan-glow2), transparent 70%); pointer-events: none }
+        .push-phone-notch { width: 60px; height: 4px; border-radius: 10px; background: var(--text4); margin: 0 auto 12px }
+        .push-banner-sim { background: rgba(24, 27, 40, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); padding: 12px 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); transition: all .3s ease }
+        .push-app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px }
+        .push-app-info { display: flex; align-items: center; gap: 6px }
+        .push-app-icon { width: 20px; height: 20px; border-radius: 6px; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; box-shadow: 0 0 10px var(--cyan-glow) }
+        .push-app-name { font-size: 11px; font-weight: 800; letter-spacing: .4px; background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent }
+        .push-sim-time { font-size: 9.5px; color: var(--text3); font-weight: 600 }
+        .push-sim-title { font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 3px; word-break: break-word }
+        .push-sim-body { font-size: 11.5px; color: var(--text2); line-height: 1.4; word-break: break-word }
+        .push-sim-image { width: 100%; max-height: 140px; object-fit: cover; border-radius: var(--radius-sm); margin-top: 8px; display: none }
+        .template-chip { padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg3); border: 1px solid var(--border3); font-size: 11px; font-weight: 700; color: var(--text2); cursor: pointer; transition: all .25s ease; display: inline-flex; align-items: center; gap: 6px; text-align: left }
+        .template-chip:hover { border-color: var(--cyan); background: var(--gradient-card); color: #fff; transform: translateY(-2px); box-shadow: 0 4px 14px var(--cyan-glow2) }
+        .template-chip i { font-size: 12px; color: var(--cyan) }
+        .char-counter { font-size: 10px; font-weight: 700; color: var(--text4); transition: color .2s }
+        .char-counter.warning { color: var(--yellow) }
+        .char-counter.danger { color: var(--red) }
+        .live-feed-card { background: var(--bg3); border: 1px solid var(--border3); border-radius: var(--radius); padding: 12px 14px; transition: all .25s ease; position: relative; overflow: hidden }
+        .live-feed-card:hover { border-color: rgba(6, 182, 212, 0.3); transform: translateX(2px) }
+        .live-feed-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--gradient) }
     </style>
 </head>
 
@@ -1582,106 +1608,193 @@
         }
 
         // ══════════════════════════════════════════════════════════════
-        // 7. ONESIGNAL PUSH NOTIFICATIONS BROADCAST
+        // 7. ONESIGNAL PUSH NOTIFICATIONS STUDIO (MODERATOR)
         // ══════════════════════════════════════════════════════════════
+        let pushHistoryListenerAttached = false;
+
         async function renderModPush(c) {
             c.innerHTML = `<div style="padding:20px" class="fade-in">
-            <div class="section-title"><i class="fas fa-paper-plane" style="color:var(--cyan)"></i>OneSignal & Push Alerts</div>
+            <div class="section-title">
+                <div style="display:flex;align-items:center;gap:8px">
+                    <i class="fas fa-paper-plane" style="color:var(--cyan)"></i>
+                    <span>Push Notification Studio</span>
+                </div>
+                <button type="button" onclick="testModOneSignalConnection()" class="btn btn-secondary btn-sm" style="width:auto;padding:6px 12px;font-size:11px">
+                    <i class="fas fa-bolt"></i>Test Connection
+                </button>
+            </div>
+
+            <!-- Connection Status Pill -->
+            <div class="push-status-bar fade-up stagger-1">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <span class="push-status-dot" id="mod-os-dot"></span>
+                    <div>
+                        <p class="push-status-pill" id="mod-os-status-text">OneSignal REST Engine Active</p>
+                        <p style="font-size:10px;color:var(--text3);margin-top:1px">Connected to OneSignal Cloud Broadcast Gateway</p>
+                    </div>
+                </div>
+                <span class="badge badge-upcoming" style="font-size:9px" id="mod-os-badge">Ready</span>
+            </div>
+
+            <!-- Live Smartphone Push Notification Simulator Preview -->
+            <div class="push-preview-container fade-up stagger-2">
+                <div class="push-phone-notch"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <span style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.6px"><i class="fas fa-mobile-alt" style="margin-right:5px"></i>Live Mobile Lockscreen Preview</span>
+                    <span style="font-size:9px;color:var(--text4)">Realtime Simulation</span>
+                </div>
+                <div class="push-banner-sim" id="push-sim-box">
+                    <div class="push-app-header">
+                        <div class="push-app-info">
+                            <div class="push-app-icon"><i class="fas fa-fire"></i></div>
+                            <span class="push-app-name">VELRIX ESPORTS</span>
+                        </div>
+                        <span class="push-sim-time">Just now</span>
+                    </div>
+                    <div class="push-sim-title" id="sim-title">🔴 Match Room Credentials Live!</div>
+                    <div class="push-sim-body" id="sim-message">Room ID and Password are now published in your match room. Join lobby before start time!</div>
+                    <img id="sim-image" class="push-sim-image" src="" alt="Push Banner Preview">
+                </div>
+            </div>
+
+            <!-- Quick Template Presets -->
+            <div class="card fade-up stagger-3" style="margin-bottom:16px;padding:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <label class="label" style="margin-bottom:0"><i class="fas fa-wand-magic-sparkles" style="color:var(--cyan);margin-right:6px"></i>Quick Esports Presets</label>
+                    <span style="font-size:10px;color:var(--text4)">1-Click Template Injection</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <button type="button" onclick="applyPushTemplate('room_ready')" class="template-chip"><i class="fas fa-door-open"></i><span>Room ID Live</span></button>
+                    <button type="button" onclick="applyPushTemplate('match_10min')" class="template-chip"><i class="fas fa-clock"></i><span>10 Min Warning</span></button>
+                    <button type="button" onclick="applyPushTemplate('winner_out')" class="template-chip"><i class="fas fa-trophy"></i><span>Winners Out</span></button>
+                    <button type="button" onclick="applyPushTemplate('maintenance')" class="template-chip"><i class="fas fa-wrench"></i><span>Time Shift Alert</span></button>
+                    <button type="button" onclick="applyPushTemplate('anticheat')" class="template-chip"><i class="fas fa-shield-virus"></i><span>Anti-Cheat Notice</span></button>
+                    <button type="button" onclick="applyPushTemplate('emergency')" class="template-chip"><i class="fas fa-triangle-exclamation"></i><span>Urgent Broadcast</span></button>
+                </div>
+            </div>
             
             <!-- Push Broadcast Form -->
-            <div class="card fade-up stagger-1" style="margin-bottom:16px">
+            <div class="card fade-up stagger-4" style="margin-bottom:16px">
                 <form id="modPushForm" class="space-y">
                     <div>
                         <label class="label">Target Audience *</label>
                         <select id="mpush-target" class="input" onchange="onModPushTargetChange(this.value)">
-                            <option value="all">📢 All App Users (Global OneSignal Broadcast)</option>
+                            <option value="all">📢 All App Users (Global Push Broadcast)</option>
                             <option value="tournament">🏆 Joined Players of Specific Match</option>
                         </select>
                     </div>
                     <div id="mpush-tournament-box" style="display:none">
-                        <label class="label">Select Match</label>
+                        <label class="label">Select Target Match</label>
                         <select id="mpush-tid" class="input"></select>
-                    </div>
-                    
-                    <!-- Quick Presets -->
-                    <div>
-                        <label class="label">Quick Templates</label>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-                            <button type="button" onclick="applyPushTemplate('room_ready')" class="btn btn-outline btn-sm" style="font-size:10px"><i class="fas fa-door-open"></i>Room ID Live</button>
-                            <button type="button" onclick="applyPushTemplate('match_10min')" class="btn btn-outline btn-sm" style="font-size:10px"><i class="fas fa-clock"></i>10 Min Warning</button>
-                            <button type="button" onclick="applyPushTemplate('winner_out')" class="btn btn-outline btn-sm" style="font-size:10px"><i class="fas fa-trophy"></i>Winner Declared</button>
-                            <button type="button" onclick="applyPushTemplate('maintenance')" class="btn btn-outline btn-sm" style="font-size:10px"><i class="fas fa-wrench"></i>Time Shift Alert</button>
-                        </div>
                     </div>
 
                     <div>
-                        <label class="label">Push Notification Title *</label>
-                        <input type="text" id="mpush-title" placeholder="e.g. 🔴 Room ID & Password Published!" class="input" required>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                            <label class="label" style="margin-bottom:0">Push Notification Title *</label>
+                            <span class="char-counter" id="title-char-counter">0 / 80</span>
+                        </div>
+                        <input type="text" id="mpush-title" placeholder="e.g. 🔴 Free Fire Custom Room is Live!" class="input" maxlength="80" required oninput="updatePushLivePreview()">
                     </div>
+
                     <div>
-                        <label class="label">Message Body *</label>
-                        <textarea id="mpush-message" class="textarea" rows="3" placeholder="Match room credentials have been issued. Join your lobby now!" required></textarea>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                            <label class="label" style="margin-bottom:0">Message Body *</label>
+                            <span class="char-counter" id="msg-char-counter">0 / 250</span>
+                        </div>
+                        <textarea id="mpush-message" class="textarea" rows="3" placeholder="Match room credentials have been issued. Join your lobby now!" maxlength="250" required oninput="updatePushLivePreview()"></textarea>
                     </div>
+
                     <div>
                         <label class="label">Banner Image URL <span style="font-size:9px;color:var(--text4)">(Optional)</span></label>
-                        <input type="url" id="mpush-image" placeholder="https://images.unsplash.com/..." class="input">
+                        <input type="url" id="mpush-image" placeholder="https://images.unsplash.com/..." class="input" oninput="updatePushLivePreview()">
                     </div>
+
                     <div>
                         <label class="label">Action URL / Deep Link <span style="font-size:9px;color:var(--text4)">(Optional)</span></label>
-                        <input type="text" id="mpush-url" placeholder="index.html or custom action" class="input">
+                        <input type="text" id="mpush-url" placeholder="index.html or custom match link" class="input">
                     </div>
-                    <div style="padding:10px;background:var(--bg4);border-radius:var(--radius-sm);font-size:11px;color:var(--text3)">
-                        <i class="fas fa-mobile-alt" style="color:var(--cyan);margin-right:6px"></i>Dispatches directly via <strong>Secure Cloud Backend</strong> and triggers <strong>Median APK OneSignal Plugin</strong>.
+
+                    <div style="padding:10px 14px;background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.18);border-radius:var(--radius-sm);font-size:11px;color:var(--text3);line-height:1.5">
+                        <i class="fas fa-shield-halved" style="color:var(--cyan);margin-right:6px"></i>Dispatches securely through <strong>Vercel Cloud Serverless API</strong> and triggers <strong>OneSignal Web SDK + Native Median APK</strong> instantly.
                     </div>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-bolt"></i>Dispatch Push Notification</button>
+
+                    <button type="submit" class="btn btn-primary btn-lg" id="modPushSubmitBtn">
+                        <i class="fas fa-paper-plane"></i>Dispatch Push Broadcast
+                    </button>
                 </form>
             </div>
 
             <!-- Broadcast History -->
-            <div class="card fade-up stagger-2">
-                <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px"><i class="fas fa-history" style="color:var(--violet)"></i>Broadcast History</h3>
-                <div id="mod-push-history" class="space-y"><div style="text-align:center;padding:20px"><div class="neon-spinner"></div></div></div>
+            <div class="card fade-up stagger-5">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                    <h3 style="font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px">
+                        <i class="fas fa-history" style="color:var(--cyan)"></i>Live Broadcast Feed
+                    </h3>
+                    <span class="badge badge-draft" id="history-count-badge" style="font-size:9px">Loading...</span>
+                </div>
+                <div id="mod-push-history" class="space-y">
+                    <div style="text-align:center;padding:20px"><div class="neon-spinner"></div></div>
+                </div>
             </div>
             </div>`;
 
+            // Load tournaments into select box
             try {
-                const [tSnap, histSnap] = await Promise.all([
-                    db.ref('tournaments').once('value').catch(() => ({ val: () => ({}) })),
-                    db.ref('push_notifications_history').limitToLast(8).once('value').catch(() => ({ val: () => ({}) }))
-                ]);
+                const tSnap = await db.ref('tournaments').once('value').catch(() => ({ val: () => ({}) }));
                 const ts = tSnap.val() || {};
-                const hist = histSnap.val() || {};
-
                 const sel = document.getElementById('mpush-tid');
                 if (sel) {
                     sel.innerHTML = Object.entries(ts).map(([id, t]) => `
-                        <option value="${id}">${t.title || 'Tournament'} (${t.game_name || 'Free Fire'})</option>
+                        <option value="${id}">${t.title || 'Match'} (${t.game_name || 'Free Fire'})</option>
                     `).join('');
                 }
-
-                const histEl = document.getElementById('mod-push-history');
-                const hList = Object.entries(hist).reverse();
-                if (histEl) {
-                    if (!hList.length) {
-                        histEl.innerHTML = '<p style="font-size:11px;color:var(--text4);text-align:center;padding:10px">No push broadcasts recorded yet</p>';
-                    } else {
-                        histEl.innerHTML = hList.map(([, p]) => `
-                            <div style="padding:10px;background:var(--bg4);border:1px solid var(--border3);border-radius:var(--radius-sm)">
-                                <div style="display:flex;justify-content:space-between;align-items:start">
-                                    <p style="font-weight:700;font-size:12px;color:var(--cyan)">${p.title || 'Broadcast'}</p>
-                                    <span class="badge badge-upcoming" style="font-size:8px">${p.target || 'All'}</span>
-                                </div>
-                                <p style="font-size:11px;color:var(--text3);margin-top:2px">${p.message || ''}</p>
-                                <p style="font-size:9px;color:var(--text4);margin-top:4px"><i class="fas fa-clock" style="margin-right:3px"></i>${new Date(p.created_at).toLocaleString()} • Sent by: ${p.sender_name || 'Staff'}</p>
-                            </div>
-                        `).join('');
-                    }
-                }
             } catch(e) {
-                console.warn('Push history load error:', e);
+                console.warn('Tournaments load error for push:', e);
             }
 
+            // Real-time Push History Listener
+            if (!pushHistoryListenerAttached) {
+                pushHistoryListenerAttached = true;
+                db.ref('push_notifications_history').limitToLast(12).on('value', snap => {
+                    const histEl = document.getElementById('mod-push-history');
+                    const countBadge = document.getElementById('history-count-badge');
+                    if (!histEl) return;
+
+                    const hist = snap.val() || {};
+                    const hList = Object.entries(hist).reverse();
+                    if (countBadge) countBadge.textContent = `${hList.length} Logged`;
+
+                    if (!hList.length) {
+                        histEl.innerHTML = '<p style="font-size:11px;color:var(--text4);text-align:center;padding:16px"><i class="fas fa-inbox" style="margin-right:6px"></i>No push broadcasts logged yet</p>';
+                    } else {
+                        histEl.innerHTML = hList.map(([, p]) => {
+                            const dateStr = p.created_at ? new Date(p.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
+                            const isAll = p.target === 'all' || !p.target;
+                            return `
+                                <div class="live-feed-card fade-in">
+                                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+                                        <p style="font-weight:800;font-size:12.5px;color:#fff">${p.title || 'Notification'}</p>
+                                        <span class="badge ${isAll ? 'badge-approved' : 'badge-upcoming'}" style="font-size:8px;white-space:nowrap">
+                                            ${isAll ? '📢 All Devices' : '🏆 Match Players'}
+                                        </span>
+                                    </div>
+                                    <p style="font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.4">${p.message || ''}</p>
+                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:9.5px;color:var(--text4)">
+                                        <span><i class="fas fa-user-shield" style="color:var(--cyan);margin-right:4px"></i>${p.sender_name || 'Moderator'}</span>
+                                        <span><i class="fas fa-clock" style="margin-right:3px"></i>${dateStr}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                });
+            }
+
+            // Bind Form Submit
             document.getElementById('modPushForm')?.addEventListener('submit', handleModPushSubmit);
+
+            // Trigger initial live preview update
+            updatePushLivePreview();
         }
 
         function onModPushTargetChange(val) {
@@ -1689,10 +1802,54 @@
             if (box) box.style.display = val === 'tournament' ? 'block' : 'none';
         }
 
+        function updatePushLivePreview() {
+            const titleInput = document.getElementById('mpush-title');
+            const msgInput = document.getElementById('mpush-message');
+            const imgInput = document.getElementById('mpush-image');
+
+            const simTitle = document.getElementById('sim-title');
+            const simMessage = document.getElementById('sim-message');
+            const simImage = document.getElementById('sim-image');
+
+            const titleCounter = document.getElementById('title-char-counter');
+            const msgCounter = document.getElementById('msg-char-counter');
+
+            const titleVal = titleInput ? titleInput.value.trim() : '';
+            const msgVal = msgInput ? msgInput.value.trim() : '';
+            const imgVal = imgInput ? imgInput.value.trim() : '';
+
+            // Update simulator text
+            if (simTitle) simTitle.textContent = titleVal || '🔴 Match Room Credentials Live!';
+            if (simMessage) simMessage.textContent = msgVal || 'Room ID and Password are now published in your match room. Join lobby before start time!';
+            
+            // Update simulator image
+            if (simImage) {
+                if (imgVal && (imgVal.startsWith('http://') || imgVal.startsWith('https://'))) {
+                    simImage.src = imgVal;
+                    simImage.style.display = 'block';
+                } else {
+                    simImage.style.display = 'none';
+                }
+            }
+
+            // Update character counters
+            if (titleCounter && titleInput) {
+                const len = titleInput.value.length;
+                titleCounter.textContent = `${len} / 80`;
+                titleCounter.className = 'char-counter' + (len > 70 ? ' danger' : len > 55 ? ' warning' : '');
+            }
+            if (msgCounter && msgInput) {
+                const len = msgInput.value.length;
+                msgCounter.textContent = `${len} / 250`;
+                msgCounter.className = 'char-counter' + (len > 220 ? ' danger' : len > 180 ? ' warning' : '');
+            }
+        }
+
         function applyPushTemplate(type) {
             const titleEl = document.getElementById('mpush-title');
             const msgEl = document.getElementById('mpush-message');
             if (!titleEl || !msgEl) return;
+
             if (type === 'room_ready') {
                 titleEl.value = '🔴 Match Room Credentials Live!';
                 msgEl.value = 'Room ID and Password are now published in your match room. Join lobby before start time!';
@@ -1704,7 +1861,81 @@
                 msgEl.value = 'Final match results verified and prizes distributed. Check the leaderboard in Arena!';
             } else if (type === 'maintenance') {
                 titleEl.value = '📢 Tournament Schedule Update';
-                msgEl.value = 'Please note the revised match start time. Check the tournament details in app!';
+                msgEl.value = 'Please note the revised match start time. Check tournament details in the app!';
+            } else if (type === 'anticheat') {
+                titleEl.value = '🛡️ Anti-Cheat & Fair Play Notice';
+                msgEl.value = 'Third-party tools and emulator exploits will result in immediate disqualification and permanent ban.';
+            } else if (type === 'emergency') {
+                titleEl.value = '🚨 Urgent Match Broadcast';
+                msgEl.value = 'Attention all participants: please check the match room chat for immediate instructions!';
+            }
+
+            updatePushLivePreview();
+            showToast('Preset Template Applied! ⚡');
+        }
+
+        async function testModOneSignalConnection() {
+            const badge = document.getElementById('mod-os-badge');
+            const dot = document.getElementById('mod-os-dot');
+            const txt = document.getElementById('mod-os-status-text');
+
+            if (badge) badge.textContent = 'Testing...';
+            if (txt) txt.textContent = 'Connecting to OneSignal...';
+            if (dot) dot.style.background = 'var(--yellow)';
+
+            try {
+                // Strategy 1: Call Vercel Serverless Backend
+                try {
+                    const token = await auth.currentUser?.getIdToken();
+                    const res = await fetch('/api/send-notification', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ action: 'test', test_only: true })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        if (data.success) {
+                            if (badge) { badge.textContent = 'Connected'; badge.className = 'badge badge-approved'; }
+                            if (dot) { dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 8px var(--green)'; }
+                            if (txt) txt.textContent = 'OneSignal Gateway Online ⚡';
+                            showToast('OneSignal Gateway Verified! 🔔');
+                            return;
+                        }
+                    } else if (res.status === 401 || res.status === 400) {
+                        const data = await res.json().catch(() => ({}));
+                        if (badge) { badge.textContent = '401 Issue'; badge.className = 'badge badge-danger'; }
+                        if (dot) { dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)'; }
+                        if (txt) txt.textContent = 'Auth Failed';
+                        showToast(data.error || 'OneSignal 401: REST API Key invalid or expired', true);
+                        return;
+                    }
+                } catch(netErr) {
+                    console.log('Local preview mode: testing directly against app settings...');
+                }
+
+                // Strategy 2: Check Firebase RTDB app_settings
+                const snap = await db.ref('app_settings/onesignal').once('value');
+                const os = snap.val() || {};
+                if (os.app_id && os.rest_api_key) {
+                    if (badge) { badge.textContent = 'Configured'; badge.className = 'badge badge-approved'; }
+                    if (dot) { dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 8px var(--green)'; }
+                    if (txt) txt.textContent = 'OneSignal Configured ⚡';
+                    showToast('OneSignal Credentials Synced in DB! 🔔');
+                } else {
+                    if (badge) { badge.textContent = 'Unset'; badge.className = 'badge badge-danger'; }
+                    if (dot) { dot.style.background = 'var(--red)'; }
+                    if (txt) txt.textContent = 'Not Configured';
+                    showToast('OneSignal credentials missing in Admin Settings', true);
+                }
+            } catch (e) {
+                if (badge) { badge.textContent = 'Offline'; badge.className = 'badge badge-danger'; }
+                if (dot) dot.style.background = 'var(--red)';
+                if (txt) txt.textContent = 'Gateway Offline';
+                showToast('Diagnostic check: ' + e.message, true);
             }
         }
 
@@ -1734,9 +1965,14 @@
             const image = document.getElementById('mpush-image').value.trim();
             const url = document.getElementById('mpush-url').value.trim();
 
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dispatching via Secure Backend...';
-            btn.disabled = true;
+            if (!title) return showToast('Please enter a notification title', true);
+            if (!message) return showToast('Please enter a notification message', true);
+
+            const btn = document.getElementById('modPushSubmitBtn');
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dispatching via Cloud Gateway...';
+                btn.disabled = true;
+            }
 
             try {
                 const res = await dispatchModPushBackend({
@@ -1748,15 +1984,23 @@
                     url: url || null
                 });
 
-                showToast('🎉 ' + (res.message || 'Push Notification Dispatched to ' + (target === 'all' ? 'All Devices!' : 'Match Players!')));
-                renderModPush(document.getElementById('modPushPage'));
+                showToast('🎉 ' + (res.message || 'Push Notification Dispatched Successfully!'));
+                
+                // Clear form inputs
+                document.getElementById('mpush-title').value = '';
+                document.getElementById('mpush-message').value = '';
+                document.getElementById('mpush-image').value = '';
+                document.getElementById('mpush-url').value = '';
+                updatePushLivePreview();
             } catch (err) {
                 console.error('[Mod Push Error]:', err);
                 const safeMsg = err.message || 'Notification dispatch failed.';
                 showToast('Push Error: ' + safeMsg, true);
             } finally {
-                btn.innerHTML = '<i class="fas fa-bolt"></i>Dispatch Push Notification';
-                btn.disabled = false;
+                if (btn) {
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i>Dispatch Push Broadcast';
+                    btn.disabled = false;
+                }
             }
         }
 
@@ -2498,7 +2742,7 @@
             navTo('modCreateTournamentPage', { draftId: tid, preserve: true });
         }
 
-        function openModEdit(tid) {
+        function editModTournament(tid) {
             currentDraftId = tid;
             navTo('modCreateTournamentPage', { draftId: tid, preserve: true });
         }
