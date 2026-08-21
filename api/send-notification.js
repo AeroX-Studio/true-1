@@ -37,12 +37,15 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ error: 'User account not found in database.' });
     }
 
-    const role = userData.role || 'user';
-    if (role !== 'admin' && role !== 'moderator') {
+    const rawRole = (userData.role || 'user').toLowerCase();
+    const isMod = rawRole === 'moderator' || rawRole === 'mod';
+    const isAdmin = rawRole === 'admin';
+
+    if (!isAdmin && !isMod) {
       return res.status(403).json({ error: 'Access denied. Only Admins and authorized Moderators can access Push Notifications.' });
     }
 
-    if (role === 'moderator') {
+    if (isMod) {
       const perms = userData.mod_permissions || {};
       if (perms.send_notifications === false) {
         return res.status(403).json({ error: 'Your moderator account does not have permission to dispatch notifications.' });
@@ -73,7 +76,7 @@ module.exports = async function handler(req, res) {
     }
 
     // Auto-sync active settings to RTDB if uninitialized so Admin Panel reflects current configuration
-    if (rtdbNeedsSync && appId && apiKey) {
+    if (rtdbNeedsSync && appId && apiKey && isAdmin) {
       rtdbUpdate('app_settings/onesignal', {
         app_id: appId,
         rest_api_key: apiKey,
@@ -82,28 +85,32 @@ module.exports = async function handler(req, res) {
       }, tokenToUse).catch(() => {});
     }
 
-    // Clean and validate API Key
+    // Clean and validate API Key & App ID
     apiKey = (apiKey || '').trim().replace(/^["']|["']$/g, '');
     appId = (appId || '').trim().replace(/^["']|["']$/g, '');
 
-    if (!apiKey || apiKey.includes('YOUR_') || apiKey === '') {
-      return res.status(400).json({
-        error: 'OneSignal REST API Key is not configured. Please enter your valid OneSignal REST API Key in Admin Panel → Settings & Config → OneSignal Push Engine.'
-      });
-    }
-
-    if (!appId || appId === '') {
-      return res.status(400).json({
-        error: 'OneSignal App ID is not configured. Please enter your OneSignal App ID in Admin Panel → Settings & Config.'
-      });
-    }
-
     // Parse request body or query
-    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    let body = {};
+    if (typeof req.body === 'string') {
+      try { body = JSON.parse(req.body || '{}'); } catch(e) { body = {}; }
+    } else if (Buffer.isBuffer(req.body)) {
+      try { body = JSON.parse(req.body.toString('utf8') || '{}'); } catch(e) { body = {}; }
+    } else if (req.body && typeof req.body === 'object') {
+      body = req.body;
+    }
+
     const action = req.query?.action || body.action || (req.method === 'GET' ? 'status' : 'send');
 
     // ── Handle Connection Test / Status Check ──
     if (action === 'test' || body.test_only === true) {
+      if (!appId || !apiKey) {
+        return res.status(400).json({
+          success: false,
+          status: 'unconfigured',
+          error: 'OneSignal App ID or REST API Key is missing. Configure it in Admin Settings.'
+        });
+      }
+
       const authHeader = formatOneSignalAuthHeader(apiKey);
       try {
         const testPayload = {
@@ -138,11 +145,13 @@ module.exports = async function handler(req, res) {
         const errMsg = testData?.errors ? (Array.isArray(testData.errors) ? testData.errors.join(', ') : JSON.stringify(testData.errors)) : `OneSignal response HTTP ${testRes.status}`;
         return res.status(testRes.status === 401 ? 401 : 400).json({
           success: false,
-          error: `OneSignal API Test Failed: ${errMsg}`
+          status: 'error',
+          error: `OneSignal API Test: ${errMsg}`
         });
       } catch (testErr) {
         return res.status(500).json({
           success: false,
+          status: 'error',
           error: `Failed to connect to OneSignal: ${testErr.message}`
         });
       }
@@ -151,9 +160,22 @@ module.exports = async function handler(req, res) {
     if (action === 'status' && req.method === 'GET') {
       return res.status(200).json({
         success: true,
-        configured: true,
-        app_id: appId,
-        key_preview: apiKey.slice(0, 12) + '...' + apiKey.slice(-6)
+        configured: Boolean(appId && apiKey),
+        app_id: appId || null,
+        key_preview: apiKey ? (apiKey.slice(0, 10) + '...' + apiKey.slice(-6)) : null
+      });
+    }
+
+    // ── Check Credentials Before Sending ──
+    if (!apiKey || apiKey.includes('YOUR_') || apiKey === '') {
+      return res.status(400).json({
+        error: 'OneSignal REST API Key is not configured. Please enter your valid OneSignal REST API Key in Admin Panel → Settings & Config → OneSignal Push Engine.'
+      });
+    }
+
+    if (!appId || appId === '') {
+      return res.status(400).json({
+        error: 'OneSignal App ID is not configured. Please enter your OneSignal App ID in Admin Panel → Settings & Config.'
       });
     }
 
@@ -212,7 +234,7 @@ module.exports = async function handler(req, res) {
       });
       osPayload.filters = filters;
     } else {
-      osPayload.included_segments = ['Total Subscriptions', 'Subscribed Users'];
+      osPayload.included_segments = ['Subscribed Users'];
     }
 
     // Dispatch via OneSignal REST API securely
@@ -248,8 +270,8 @@ module.exports = async function handler(req, res) {
       image_url: imageUrl || null,
       url: actionUrl || null,
       sender_uid: user.uid,
-      sender_name: userData.username || (role === 'admin' ? 'Admin' : 'Moderator'),
-      sender_role: role,
+      sender_name: userData.username || (isAdmin ? 'Admin' : 'Moderator'),
+      sender_role: isAdmin ? 'admin' : 'moderator',
       recipients: osData.recipients ?? (target === 'tournament' ? targetUids.length : 0),
       status: 'delivered',
       created_at: new Date().toISOString()
@@ -267,7 +289,7 @@ module.exports = async function handler(req, res) {
       success: true,
       notification_id: osData.id || pushKey,
       recipients: recipientsCount,
-      message: `Push notification dispatched successfully to ${target === 'all' ? 'all app devices' : targetUids.length + ' player(s)'}!`
+      message: `Push notification dispatched successfully to ${target === 'all' ? 'all registered devices' : targetUids.length + ' match player(s)'}!`
     });
 
   } catch (err) {
