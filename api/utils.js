@@ -50,7 +50,7 @@ const UDDOKTAPAY_BASE_URL = (process.env.UDDOKTAPAY_BASE_URL || 'https://aerox.p
 
 // OneSignal Configuration Defaults
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || '421b1a39-54f8-45bd-84b8-aee27bba64c5';
-const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || 'os_v2_app_iinruoku7bc33bfyv3rhxoteyvkootsciqwuqv5t5xov2w7tgn2mqtvylcsehyqpt47urzyi5i2uc4abejmf6xxh5jh34bmlql5a45y';
+const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || 'os_v2_app_iinruoku7bc33bfyv3rhxoteyx37dwsew7bulz5ejbloc7fvcug7ymxjnmadi5n3zbfmj7qtqw2xvpcwzlpsnt54qj5hjykdl7ikigi';
 
 function formatOneSignalAuthHeader(apiKey) {
   if (!apiKey) return '';
@@ -58,7 +58,10 @@ function formatOneSignalAuthHeader(apiKey) {
   if (/^(Key|Basic|Bearer)\s+/i.test(trimmed)) {
     return trimmed;
   }
-  return `Key ${trimmed}`;
+  if (trimmed.startsWith('os_v2_')) {
+    return `Key ${trimmed}`;
+  }
+  return `Basic ${trimmed}`;
 }
 
 function getUddoktaApiUrl(endpoint) {
